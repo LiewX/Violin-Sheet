@@ -22,6 +22,10 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
 - **Working through issues:** once an issue is reviewed, built and checked on the tablet over adb, commit straight to `main` and push without asking. End the message with `Closes #N`, so the push closes the issue. Then go straight on to the next issue. Stop only for something that needs the user: a design change, a spec gap, or a decision the docs don't settle.
 - **Manual checks:** for each finished issue, add the things only a person can judge (S Pen feel, palm rejection, visual quality) to [`docs/manual-checks.md`](docs/manual-checks.md). The user works through that list when they check in.
 - **Device check early:** when an issue's acceptance needs the tablet, run `adb devices` at the start and ask the user to plug it in while the code is being written.
+- **Model choice** (also for subagents, through the Agent tool's `model`):
+  - **Opus:** planning, architecture, and the hard algorithm work: Page layout and zoom math, Ink geometry and lasso hit-testing, staff-line detection and Symbol scale, and, after V1.0, music data (MusicXML edge cases) and audio timing (automatic page flipping, metronome). Also reviews of design-heavy changes.
+  - **Sonnet:** routine implementation, refactors and test writing once the plan is settled, and the routine standards/spec review subagents. The main session switches with `/model`; only the user can do that, so say when a stretch of routine work is coming.
+  - **Haiku:** quick lookups (Explore searches, finding a symbol or file) and scripted high-volume runs. Never sustained coding.
 - **Update `PROGRESS.md` after every session.**
 - **At cleanup** (the user asks before ending a session), update [`docs/workflow-ideas.md`](docs/workflow-ideas.md): add what slowed the session or caused mistakes, each with a concrete fix, and mark earlier ideas **done** or **dropped**.
 
