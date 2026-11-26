@@ -4,65 +4,67 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Violin sheet music app for **Samsung Galaxy Tab S9+ (Android 13+)**. The S Pen is the main input.
+Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (Android 13+)** with the S Pen; iPad with Apple Pencil follows after V1.0. The pen is the main input.
 
-- **V1.0** = Feature 1 (annotation editing).
-- **Features 2–4** = post-V1.0. Feature 3 is automatic page flipping.
+- **What to build:** [`docs/SPECS.md`](docs/SPECS.md). V1.0 is Feature 1 (annotation editing); Features 2–4 (sheet fixing, automatic page flipping, metronome) are Post-V1.0; Nice-to-have items come after a stable deployment.
+- **Vocabulary:** [`GLOSSARY.md`](GLOSSARY.md). Use its terms (Sheet, Page, Printed marking, Ink, Symbol, Cover, Text box, Link, Ink mode, Edit mode, Text mode) in code, issues and docs.
+- **Decisions:** [`docs/adr/`](docs/adr/).
+- **Status:** [`PROGRESS.md`](PROGRESS.md).
 
 ## Working Style
 
-- **Ask before assuming** when a requirement is unclear (e.g. PDF vs. vector rendering): present the tradeoff, don't pick silently.
-- **Justify architectural decisions** in one or two sentences when you introduce them.
-- **Don't implement post-V1.0 features**, even if asked in passing. Note them in `PROGRESS.md` instead.
-- **Update `PROGRESS.md` after every session** (see [Progress Tracking](#progress-tracking)).
+- **Ask before assuming** when a requirement is unclear: present the tradeoff, don't pick silently.
+- **Justify architectural decisions** in one or two sentences when you introduce them. Record hard-to-reverse ones as an ADR.
+- **Grill before big changes.** When a request changes scope, adds or removes a feature, or forces a significant design decision, run a grilling session (`/grill-with-docs`) before implementing. Update `docs/SPECS.md`, `GLOSSARY.md` and `docs/adr/` from its outcome.
+- **Review the whole spec after every grilling.** Once its outcome is written into the docs, read `docs/SPECS.md` end to end (with `GLOSSARY.md`, `CLAUDE.md` and the ADRs) and check for contradictions, stale wording and gaps the new decisions created. Fix wording-only issues directly; bring anything that needs a decision back to the user.
+- **Don't implement Post-V1.0 or Nice-to-have features**, even if asked in passing. Note them in `PROGRESS.md` instead.
+- **Update `PROGRESS.md` after every session.**
 
 ## Tech Stack
 
 | Area | Choice | Why |
 |---|---|---|
-| Language / UI | Kotlin + Jetpack Compose | — |
-| Stylus input | Android Ink API (Jetpack) | ~4ms latency on Samsung devices; handles stroke geometry and palm rejection natively. Do not build from scratch. |
-| Sheet rendering | **Undecided.** Compare PDF overlay with MusicXML/MEI vector rendering and justify the choice before writing code. | The default lean is PDF overlay: imported sheets are scans or PDFs. "Printed-look" annotations may later need a notation-aware layer. |
-| Converted annotations | Symbol palette, no handwriting recognition in V1.0 | On-device ML for notation is a large research effort of its own; a palette gives the printed look right away. Leave the ML pipeline as a post-V1.0 TODO behind a defined interface. |
+| Language / UI | Kotlin Multiplatform + Compose Multiplatform | One codebase for Android and iPad; native ink per platform. See [ADR 0002](docs/adr/0002-kotlin-multiplatform-with-native-ink.md). |
+| Stylus input | Android: Android Ink API (Jetpack). iOS (after V1.0): PencilKit or Metal canvas | Native low-latency inking (~4ms on Samsung) and palm rejection. Do not build from scratch. Strokes are stored in a shared format, not Ink API types. |
+| Sheet rendering | PDF pages as images, Annotations as overlay layers | Sheets are scans; vector notation would need unreliable OMR. See [ADR 0001](docs/adr/0001-pdf-pages-with-overlay-annotations.md). |
+| Symbols | Palette placement, no handwriting recognition in V1.0 | On-device notation recognition is a research effort of its own; a palette gives the printed look right away. |
 
 ## Architecture
 
-- **Modules:** `:app`, `:core:pdf`, `:core:ink`, `:core:data`, `:feature:viewer`, `:feature:annotation`. Stub `:feature:metronome` for later.
+- **Modules:** `:androidApp` (V1.0) and `:iosApp` (after V1.0), plus shared KMP modules `:core:pdf`, `:core:ink`, `:core:data`, `:feature:viewer`, `:feature:annotation`. Stub `:feature:metronome` for later. Platform code (ink canvas, PDF rendering, file picker, pen hardware mapping) goes in `androidMain`/`iosMain`; everything else in `commonMain`.
 - **State:** MVVM with Kotlin `StateFlow`.
-- **Undo/redo:** command-pattern undo stack from day one, covering both raw and converted annotations. Annotation editing without solid undo is unusable, and adding it later is costly.
-- **Layers:** raw ink strokes and converted symbols live on separate layers, each with its own visibility toggle. This lets printed-look symbols be edited and saved separately from freehand ink.
+- **Settings:** each feature module declares its own Settings; the settings page is generated from those declarations. Never hard-code a feature's Setting in the page.
+- **Undo/redo:** command-pattern undo stack from day one, covering Ink (including lasso actions), Symbols, Covers and Text boxes. Annotation editing without solid undo is unusable, and adding it later is costly.
+- **Layers:** Ink, Edit mode content (Covers under Symbols) and Text boxes live on three separate layers, each with its own visibility toggle.
+- **Coordinates:** Annotations and stroke sizes are stored in Page coordinates, never screen pixels, so they stay put across zoom, rotation and layout.
 
 ## UI/UX
 
-- **Toolbar:** a slim palette that stays at the bottom edge, within thumb and S Pen reach. No modal dialogs for switching tools.
-- **Palm rejection:** rely on Android's built-in stylus palm rejection. Verify that finger touches during pen input do not create strokes.
-- **Converted annotations:** two steps with a ghost preview (select symbol → tap to place → ghost preview → confirm), so placing a printed-look symbol feels deliberate.
-- **Page transitions:** pre-render at least the next page so page turns are instant and silent. Automatic page flipping (Feature 3) needs zero blank-flash latency.
-- **Surround:** neutral dark grey (not pure black) around the sheet to reduce eye strain. Never invert the sheet itself.
-
-## Feature 1 Scope (V1.0)
-
-**Raw annotation tools** (stay as raw ink): pen, highlighter, eraser (area and stroke modes), adjustable size and color.
-
-**Converted annotation types**, implement in this order:
-
-1. Fingerings (number placement)
-2. Articulations (tenuto, fermata)
-3. Bowing marks (up/down)
-4. Ties/slurs (curved lines between anchor points)
-
-**Deferred to V1.1:** sharps/flats with spacing adjustment. Accidentals need note/barline reflow, which is structurally harder and should not block V1.0.
+- **Toolbar:** a slim palette that stays at the bottom edge, within thumb and pen reach. No modal dialogs for switching tools or picking colours.
+- **Input split:** the pen draws and edits; fingers only navigate (turn pages, zoom, open Links). Rely on the platform's built-in palm rejection, and verify that finger touches during pen input do not create strokes.
+- **Symbol placement:** select Symbol → tap to place → ghost preview → confirm, so placing a printed-look Symbol feels deliberate.
+- **Page transitions:** pre-render at least the next Page so page turns are instant and silent. Automatic page flipping (Feature 3) needs zero blank-flash latency.
+- **Surround:** neutral dark grey (not pure black) around the Sheet to reduce eye strain. Never invert the Sheet itself.
 
 ## Progress Tracking
 
-Maintain `PROGRESS.md` with this table:
+`PROGRESS.md` is a one-page status overview. Detailed work items live in GitHub Issues; link to them rather than repeating them.
 
 | Feature | Sub-feature | Status | Next Step |
 |---|---|---|---|
 
-Status is one of: Not Started / In Progress / Done / Deferred.
+Status is one of: Not Started / In Progress / Done / Post-V1.0 / Nice-to-have.
 
-**V1.0 scope:** project setup, PDF rendering, raw ink layer, converted annotation palette (items 1–3 above), undo/redo, persistence. Mark everything else "Post-V1.0".
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- When graphify-out/graph.json exists, run `/graphify query "<question>"` before your first grep, search or source-file read for a codebase question. Read raw files only for lines the graph or an earlier read already located. Use `/graphify path "<A>" "<B>"` for relationships and `/graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Search order: graphify always comes first. After it, use Grep for exact matches (symbol tracing, refactoring, regex) and `mgrep "<natural-language query>"` for intent search (code exploration, feature discovery, onboarding). This overrides the mgrep plugin's "replaces all built-in search tools" rule.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `/graphify update` to keep the graph current (AST-only, no API cost). If the skill is unavailable, run `graphify update .` in a terminal outside Claude Code.
 
 ## Agent skills
 
