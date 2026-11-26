@@ -19,6 +19,8 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
 - **Review the whole spec after every grilling.** Once its outcome is written into the docs, read `docs/SPECS.md` end to end (with `GLOSSARY.md`, `CLAUDE.md` and the ADRs) and check for contradictions, stale wording and gaps the new decisions created. Fix wording-only issues directly; bring anything that needs a decision back to the user.
 - **Don't implement Post-V1.0 or Nice-to-have features**, even if asked in passing. Note them in `PROGRESS.md` instead.
 - **Review before committing an issue.** Run `/code-review` (the `mattpocock-skills:code-review` skill) on the issue's changes: it checks them against the coding standards and the issue's acceptance criteria. Fix or explicitly defer each finding, rerun the build, then commit.
+- **Committing:** once an issue is reviewed and the user has verified it, commit straight to `main` and push. End the message with `Closes #N`, so the push closes the issue.
+- **Device check early:** when an issue's acceptance needs the tablet, run `adb devices` at the start and ask the user to plug it in while the code is being written.
 - **Update `PROGRESS.md` after every session.**
 - **At cleanup** (the user asks before ending a session), update [`docs/workflow-ideas.md`](docs/workflow-ideas.md): add what slowed the session or caused mistakes, each with a concrete fix, and mark earlier ideas **done** or **dropped**.
 
@@ -31,6 +33,25 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
 | Sheet rendering | PDF pages as images, Annotations as overlay layers | Sheets are scans; vector notation would need unreliable OMR. See [ADR 0001](docs/adr/0001-pdf-pages-with-overlay-annotations.md). |
 | Storage | Room (KMP) in `:core:data` | Typed queries, migrations and `Flow` on Android and iOS. See [ADR 0003](docs/adr/0003-room-for-local-storage.md). |
 | Symbols | Palette placement, no handwriting recognition in V1.0 | On-device notation recognition is a research effort of its own; a palette gives the printed look right away. |
+
+## Build & run
+
+**Toolchain (Windows):** JDK 17 and the Android SDK, both installed with scoop (`java/temurin17-jdk`, `main/android-clt`, SDK platform 36). At session start, check `java -version` and `"$ANDROID_HOME/platform-tools/adb.exe" version`. If `java` is missing in Git Bash, run `export JAVA_HOME=~/scoop/apps/temurin17-jdk/current`. A fresh clone needs `ANDROID_HOME` set, or a `local.properties` with `sdk.dir`.
+
+| Purpose | Command | Time |
+|---|---|---|
+| Check after each edit | `./gradlew :core:data:testDebugUnitTest :androidApp:assembleDebug` | ~15 s warm |
+| Before committing | `./gradlew build` (all tests, lint, release variants) | ~5–7 min |
+| Install on the tablet | `./gradlew :androidApp:installDebug` | ~15 s |
+
+- **Read build output** with `--console=plain 2>&1 | grep -vE "^> Task|^\[=|^$"`. It drops the task lines but keeps every warning and error. Don't pipe Gradle into `head`, which cuts off the error.
+- **adb from Git Bash:** prefix commands with `MSYS_NO_PATHCONV=1`, or Git Bash rewrites device paths (`/sdcard/...` becomes `C:/Program Files/Git/sdcard/...`). Pass local files as Windows paths (`C:/...`).
+- **Device checks** (debug build):
+  - Launch: `adb shell am start -n com.violinsheet/com.violinsheet.android.MainActivity`
+  - Screenshot: `adb exec-out screencap -p > shot.png`
+  - Crashes: `adb logcat -d -b crash`
+  - Database: copy `violinsheet.db`, `-wal` and `-shm` with `adb exec-out run-as com.violinsheet cat databases/<file>` and open them with Python's `sqlite3`.
+- **Versions** live only in `gradle/libs.versions.toml`. Its header lists which versions must move together.
 
 ## Architecture
 

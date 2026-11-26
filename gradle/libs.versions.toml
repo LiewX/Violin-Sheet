@@ -1,3 +1,10 @@
+# Move these together:
+# - ksp is "<kotlin>-<ksp release>"; its prefix must equal kotlin.
+# - compose-multiplatform must support this kotlin version (JetBrains' compatibility table).
+# - lifecycle (org.jetbrains.androidx) must match compose-multiplatform.
+# - AGP 9 is not used yet: it replaces com.android.library in KMP modules with
+#   com.android.kotlin.multiplatform.library, so buildSrc needs reworking first.
+# Name the full set in the commit message when bumping.
 [versions]
 kotlin = "2.2.21"
 agp = "8.13.2"
