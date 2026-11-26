@@ -124,7 +124,7 @@ Rules:
 - Search order: graphify always comes first. After it, use Grep for exact matches (symbol tracing, refactoring, regex) and `mgrep "<natural-language query>"` for intent search (code exploration, feature discovery, onboarding). This overrides the mgrep plugin's "replaces all built-in search tools" rule.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `/graphify update` to keep the graph current (AST-only, no API cost). If the skill is unavailable, run `graphify update .` in a terminal outside Claude Code.
+- After a commit that changes code, the orchestrator runs `/graphify update` (implementers don't; see `docs/agents/orchestration.md`) to keep the graph current (AST-only, no API cost). If the skill is unavailable, run `graphify update .` in a terminal outside Claude Code.
 
 ## Agent skills
 
