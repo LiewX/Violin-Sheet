@@ -71,17 +71,19 @@ class MainActivity : ComponentActivity() {
                         val pdfFile = entry.arguments?.getString("pdfFile").orEmpty()
                         // The list only opens Sheets whose PDF exists (a missing one shows the re-import prompt).
                         val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile)), sheetId, app.sheetRepository, app.settingsStore) }
-                        val annotations = viewModel { AnnotationViewModel(sheetId, app.inkRepository, app.settingsStore) }
+                        val annotations = viewModel { AnnotationViewModel(sheetId, app.inkRepository, app.settingsStore, app.eraserMemory) }
                         val strokes by annotations.strokes.collectAsState()
-                        val pen by annotations.pen.collectAsState()
+                        val tools by annotations.tools.collectAsState()
                         val saveFailed by annotations.saveFailed.collectAsState()
                         val canUndo by annotations.canUndo.collectAsState()
                         val canRedo by annotations.canRedo.collectAsState()
                         SheetScreen(
                             viewModel,
-                            overlay = { placements -> InkLayer(placements, strokes, pen, annotations::addStroke, Modifier.fillMaxSize()) },
+                            overlay = { placements ->
+                                InkLayer(placements, strokes, tools.current, tools.eraser, annotations::addStroke, annotations, Modifier.fillMaxSize())
+                            },
                             toolbar = {
-                                InkToolbar(pen, annotations::setPen, UndoControls(canUndo, canRedo, annotations::undo, annotations::redo), saveFailed)
+                                InkToolbar(tools, annotations::setTools, UndoControls(canUndo, canRedo, annotations::undo, annotations::redo), saveFailed)
                             },
                         )
                     }

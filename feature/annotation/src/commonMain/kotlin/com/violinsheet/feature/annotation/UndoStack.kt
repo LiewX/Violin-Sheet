@@ -30,6 +30,11 @@ class UndoStack {
     /** Applies [command] and records it. A new edit drops what could be redone. */
     fun perform(command: Command) {
         command.apply()
+        record(command)
+    }
+
+    /** Records [command], already applied as it happened (an erase gesture), without applying it again. */
+    fun record(command: Command) {
         done.addLast(command)
         undone.clear()
         changed()

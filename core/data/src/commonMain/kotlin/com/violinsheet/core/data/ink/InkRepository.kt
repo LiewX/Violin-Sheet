@@ -1,6 +1,7 @@
 package com.violinsheet.core.data.ink
 
 import com.violinsheet.core.ink.InkStroke
+import com.violinsheet.core.ink.StrokeTool
 import com.violinsheet.core.ink.decodeInkPoints
 import com.violinsheet.core.ink.encodeInkPoints
 import kotlinx.coroutines.CompletableDeferred
@@ -33,17 +34,22 @@ class InkRepository(private val dao: InkDao, scope: CoroutineScope) {
     /** The Sheet's strokes. A row that can't be read is skipped (and reported), so it can't hide the rest. */
     suspend fun strokes(sheetId: Long, onUnreadable: (Throwable) -> Unit = {}): List<InkStroke> = inOrder {
         dao.forSheet(sheetId).mapNotNull { row ->
-            runCatching { InkStroke(row.id, row.pageIndex, row.colour, row.size, decodeInkPoints(row.points)) }
+            runCatching {
+                InkStroke(row.id, row.pageIndex, row.colour, row.size, decodeInkPoints(row.points), StrokeTool.fromStored(row.tool))
+            }
                 .onFailure(onUnreadable)
                 .getOrNull()
         }
     }.await()
 
-    /** Queues saving [stroke]; the result completes when it is saved, or with the error. Saving it again is harmless. */
-    fun add(sheetId: Long, stroke: InkStroke): Deferred<Unit> = inOrder {
-        dao.insert(InkStrokeRow(stroke.id, sheetId, stroke.pageIndex, stroke.colour, stroke.size, encodeInkPoints(stroke.points)))
+    /**
+     * Queues one write that deletes the strokes [removeIds], then saves [add] (replacing any with the same id), all or
+     * nothing. The result completes when it is done, or with the error. Saving the same strokes again is harmless.
+     */
+    fun replace(sheetId: Long, removeIds: List<Long>, add: List<InkStroke>): Deferred<Unit> {
+        val rows = add.map {
+            InkStrokeRow(it.id, sheetId, it.pageIndex, it.colour, it.size, encodeInkPoints(it.points), it.tool.stored)
+        }
+        return inOrder { dao.replace(removeIds, rows) }
     }
-
-    /** Queues deleting a stroke; the result completes when it is gone, or with the error. */
-    fun remove(strokeId: Long): Deferred<Unit> = inOrder { dao.delete(strokeId) }
 }

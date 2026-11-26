@@ -12,12 +12,13 @@ import com.violinsheet.core.data.settings.SettingValue
 
 @Database(
     entities = [Sheet::class, SettingValue::class, InkStrokeRow::class],
-    version = 5,
+    version = 6,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // Sheet.deletedAt
         AutoMigration(from = 2, to = 3), // Sheet.advanceByOne
         AutoMigration(from = 3, to = 4), // SettingValue
         AutoMigration(from = 4, to = 5), // InkStroke
+        AutoMigration(from = 5, to = 6), // InkStroke.tool
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)

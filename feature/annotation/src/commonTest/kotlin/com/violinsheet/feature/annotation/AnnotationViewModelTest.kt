@@ -6,8 +6,12 @@ import com.violinsheet.core.data.ink.InkStrokeRow
 import com.violinsheet.core.data.settings.SettingDao
 import com.violinsheet.core.data.settings.SettingValue
 import com.violinsheet.core.data.settings.SettingsStore
+import androidx.compose.ui.geometry.Offset
+import com.violinsheet.core.ink.EraseMode
+import com.violinsheet.core.ink.Eraser
 import com.violinsheet.core.ink.InkPoint
 import com.violinsheet.core.ink.InkStroke
+import com.violinsheet.core.ink.StrokeTool
 import com.violinsheet.core.ink.encodeInkPoints
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -53,18 +57,22 @@ class AnnotationViewModelTest {
             return snapshot
         }
 
-        override suspend fun insert(row: InkStrokeRow) {
+        override suspend fun insert(rows: List<InkStrokeRow>) {
             delay(10)
             check(!failWrites) { "disk full" }
-            rows.removeAll { it.id == row.id } // REPLACE
-            rows += row
+            val ids = rows.map { it.id }.toSet()
+            this.rows.removeAll { it.id in ids } // REPLACE
+            this.rows += rows
         }
 
-        override suspend fun delete(id: Long) {
+        override suspend fun delete(ids: List<Long>) {
             delay(deleteMillis)
             check(!failDeletes) { "disk full" }
-            rows.removeAll { it.id == id }
+            rows.removeAll { it.id in ids }
         }
+
+        override suspend fun idsOnOtherSheets(ids: List<Long>, sheetId: Long) =
+            rows.filter { it.id in ids && it.sheetId != sheetId }.map { it.id }
     }
 
     private object NoSettings : SettingDao {
@@ -79,7 +87,23 @@ class AnnotationViewModelTest {
 
     @AfterTest fun resetMainDispatcher() = Dispatchers.resetMain()
 
-    private fun stroke(id: Long) = InkStroke(id, 0, 0xFF000000.toInt(), 1.5f, listOf(InkPoint(1f, id.toFloat(), 0.5f, 0)))
+    private fun stroke(id: Long) = InkStroke(id, 0, 0xFF000000.toInt(), 1.5f, listOf(InkPoint(1f, id.toFloat(), 0.5f, 0)), StrokeTool.Pen)
+
+    /** Ids given to pieces that can't keep their stroke's place. */
+    private var nextFallbackId = 1_000_000L
+
+    /** A straight 1 pt stroke along y = [y] from x = 0 to 100, a point every 1 pt. */
+    private fun line(id: Long, y: Float, page: Int = 0) =
+        InkStroke(id, page, 0xFF000000.toInt(), 1f, List(101) { InkPoint(it.toFloat(), y, 0.5f, it.toLong()) }, StrokeTool.Pen)
+
+    /** One erase gesture through [points] (Page 0), as InkLayer reports it. */
+    private fun AnnotationViewModel.eraseThrough(eraser: Eraser, points: List<Offset>, cancelled: Boolean = false) {
+        beginErase(eraser)
+        for (p in points) eraseAt(0, p)
+        endErase(cancelled)
+    }
+
+    private fun savedPoints(id: Long) = dao.rows.single { it.id == id }.points.size
 
     /** One per test, like the app's: every ViewModel of the test shares its queue. */
     private var ink: InkRepository? = null
@@ -88,7 +112,7 @@ class AnnotationViewModelTest {
     private fun TestScope.viewModel(store: ViewModelStore = ViewModelStore()): AnnotationViewModel {
         val repository = ink ?: InkRepository(dao, backgroundScope).also { ink = it }
         val factory = viewModelFactory {
-            initializer { AnnotationViewModel(sheetId, repository, SettingsStore(NoSettings, backgroundScope)) }
+            initializer { AnnotationViewModel(sheetId, repository, SettingsStore(NoSettings, backgroundScope), EraserMemory()) { nextFallbackId++ } }
         }
         return ViewModelProvider.create(store, factory)[AnnotationViewModel::class]
     }
@@ -143,7 +167,7 @@ class AnnotationViewModelTest {
      * [putBack] directly, below.
      */
     @Test fun redoKeepsPlaceWhenSavedStrokesLoadInBetween() = runTest {
-        dao.rows += InkStrokeRow(100, sheetId, 0, 0, 1f, encodeInkPoints(stroke(100).points))
+        dao.rows += InkStrokeRow(100, sheetId, 0, 0, 1f, encodeInkPoints(stroke(100).points), "pen")
         dao.readAfterMillis = 50
         val vm = viewModel()
         vm.addStroke(stroke(1))
@@ -222,12 +246,165 @@ class AnnotationViewModelTest {
 
     @Test fun putBackReturnsSeveralItemsToTheirPlacesMidList() {
         // a b c d e with b and d taken out leaves a c e.
-        val removed = listOf(IndexedValue(1, "b"), IndexedValue(3, "d"))
-        assertEquals(listOf("a", "b", "c", "d", "e"), listOf("a", "c", "e").putBack(removed, sizeWithout = 3))
+        val (left, removed) = listOf("a", "b", "c", "d", "e").takeOut { it == "b" || it == "d" }
+        assertEquals(listOf("a", "c", "e"), left)
+        assertEquals(listOf("a", "b", "c", "d", "e"), left.putBack(removed))
         // Two saved strokes loaded in front since: every place shifts by two.
-        assertEquals(
-            listOf("x", "y", "a", "b", "c", "d", "e"),
-            listOf("x", "y", "a", "c", "e").putBack(removed, sizeWithout = 3),
-        )
+        assertEquals(listOf("x", "y", "a", "b", "c", "d", "e"), (listOf("x", "y") + left).putBack(removed))
+    }
+
+    @Test fun strokeEraserRemovesWholeStrokesItTouchesAsOneUndoStep() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStroke(line(1000, y = 0f))
+        vm.addStroke(line(2000, y = 50f))
+        vm.addStroke(line(3000, y = 0f, page = 1)) // same spot, other Page
+        vm.addStroke(line(4000, y = 0f))
+
+        // Down at (50, -20), across both strokes at y = 0, up past them.
+        vm.eraseThrough(Eraser(EraseMode.Stroke, 4f), listOf(Offset(50f, -20f), Offset(50f, 20f)))
+        settle()
+        assertEquals(listOf(2000L, 3000L), vm.ids())
+        assertEquals(setOf(2000L, 3000L), savedIds())
+
+        vm.undo()
+        settle()
+        assertEquals(listOf(1000L, 2000L, 3000L, 4000L), vm.ids())
+        assertEquals(setOf(1000L, 2000L, 3000L, 4000L), savedIds())
+
+        vm.redo()
+        settle()
+        assertEquals(listOf(2000L, 3000L), vm.ids())
+        assertEquals(setOf(2000L, 3000L), savedIds())
+    }
+
+    @Test fun areaEraserCutsAStrokeIntoPiecesThatKeepItsPlace() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStroke(line(1000, y = 0f))
+        vm.addStroke(line(2000, y = 5f)) // on top, out of the eraser's reach
+
+        vm.eraseThrough(Eraser(EraseMode.Area, 4f), listOf(Offset(50f, -3f), Offset(50f, 1f)))
+        settle()
+        assertEquals(listOf(1000L, 1001L, 2000L), vm.ids())
+        assertEquals(setOf(1000L, 1001L, 2000L), savedIds())
+        val (left, right) = vm.strokes.value
+        assertTrue(left.points.last().x < 48f && right.points.first().x > 52f)
+
+        vm.undo()
+        settle()
+        assertEquals(listOf(line(1000, 0f), line(2000, 5f)), vm.strokes.value)
+        assertEquals(setOf(1000L, 2000L), savedIds())
+        assertEquals(encodeInkPoints(line(1000, 0f).points).size, savedPoints(1000))
+
+        vm.redo()
+        settle()
+        assertEquals(listOf(1000L, 1001L, 2000L), vm.ids())
+        assertEquals(setOf(1000L, 1001L, 2000L), savedIds())
+    }
+
+    @Test fun gestureThatCutsItsOwnPiecesIsStillOneStep() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStroke(line(1000, y = 0f))
+
+        // Two dabs in one gesture: the second cuts the right-hand piece of the first.
+        vm.eraseThrough(Eraser(EraseMode.Area, 4f), listOf(Offset(30f, 0f), Offset(30f, 30f), Offset(70f, 30f), Offset(70f, 0f)))
+        settle()
+        assertEquals(listOf(1000L, 1001L, 1002L), vm.ids())
+        assertEquals(setOf(1000L, 1001L, 1002L), savedIds())
+
+        vm.undo()
+        settle()
+        assertEquals(listOf(line(1000, 0f)), vm.strokes.value)
+        assertEquals(setOf(1000L), savedIds())
+        vm.undo() // the next step back is the drawing
+        assertEquals(emptyList(), vm.ids())
+    }
+
+    @Test fun eraseThatTouchesNothingAddsNoUndoStep() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.eraseThrough(Eraser(EraseMode.Area, 4f), listOf(Offset(30f, 30f)))
+        assertFalse(vm.canUndo.value)
+    }
+
+    @Test fun cancelledEraseTakesItsErasingBack() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStroke(line(1000, y = 0f))
+        vm.addStroke(line(2000, y = 50f))
+        settle()
+
+        vm.eraseThrough(Eraser(EraseMode.Area, 4f), listOf(Offset(50f, 0f)), cancelled = true)
+        settle()
+        assertEquals(listOf(line(1000, 0f), line(2000, 50f)), vm.strokes.value)
+        assertEquals(setOf(1000L, 2000L), savedIds())
+        vm.undo() // takes back the last drawn stroke, not a phantom erase
+        assertEquals(listOf(1000L), vm.ids())
+    }
+
+    @Test fun failedEraseWriteSetsSaveFailed() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStroke(line(1000, y = 0f))
+        settle()
+        dao.failDeletes = true
+        vm.eraseThrough(Eraser(EraseMode.Stroke, 4f), listOf(Offset(50f, 0f)))
+        settle()
+        assertTrue(vm.saveFailed.value)
+    }
+
+    @Test fun highlighterStartsFromItsSettings() = runTest {
+        val vm = viewModel()
+        settle()
+        val highlighter = vm.tools.value.highlighter
+        assertEquals(InkSettings.highlighterColour.default, highlighter.colour)
+        assertEquals(InkSettings.highlighterSize.default, highlighter.size)
+    }
+
+    @Test fun strokeHandedOverDuringAnEraseKeepsPlacesOnUndo() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStroke(line(1000, y = 0f))
+        vm.addStroke(line(2000, y = 50f))
+
+        vm.beginErase(Eraser(EraseMode.Stroke, 4f))
+        vm.eraseAt(0, Offset(50f, 0f))
+        vm.addStroke(line(3000, y = 80f)) // a lift lost earlier, handed over mid-erase
+        vm.endErase(cancelled = false)
+        assertEquals(listOf(2000L, 3000L), vm.ids())
+
+        vm.undo()
+        settle()
+        assertEquals(listOf(1000L, 2000L, 3000L), vm.ids())
+
+        vm.redo()
+        vm.eraseThrough(Eraser(EraseMode.Area, 4f), listOf(Offset(50f, 50f)), cancelled = true)
+        assertEquals(listOf(2000L, 3000L), vm.ids())
+    }
+
+    @Test fun eraserThatLeftThePageDoesNotSweepFromWhereItLeft() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStroke(line(1000, y = 50f))
+
+        vm.beginErase(Eraser(EraseMode.Stroke, 4f))
+        vm.eraseAt(0, Offset(50f, 0f))
+        vm.eraserOffPage()
+        vm.eraseAt(0, Offset(50f, 100f)) // the straight path back would cross the stroke
+        vm.endErase(cancelled = false)
+        assertEquals(listOf(1000L), vm.ids())
+    }
+
+    @Test fun highlighterUndoAndRedoKeepItAHighlighter() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStroke(line(1000, y = 0f).copy(tool = StrokeTool.Highlighter))
+        vm.undo()
+        vm.redo()
+        settle()
+        assertEquals("highlighter", dao.rows.single().tool)
+        assertEquals(StrokeTool.Highlighter, vm.strokes.value.single().tool)
     }
 }

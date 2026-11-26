@@ -13,6 +13,7 @@ import com.violinsheet.core.data.appDatabase
 import com.violinsheet.core.data.ink.InkRepository
 import com.violinsheet.core.data.settings.SettingsRegistry
 import com.violinsheet.core.data.settings.SettingsStore
+import com.violinsheet.feature.annotation.EraserMemory
 import com.violinsheet.feature.annotation.InkSettings
 import com.violinsheet.feature.viewer.ViewerSettings
 
@@ -26,6 +27,7 @@ class ViolinSheetApp : Application() {
     val settingsStore by lazy { SettingsStore(database.settingDao(), appScope) }
 
     /** Every feature's Settings. A feature with Settings adds its list here once; the page picks up the rest. */
+    val eraserMemory = EraserMemory()
     val settingsRegistry by lazy { SettingsRegistry(listOf(ViewerSettings.all, InkSettings.all)) }
     val inkRepository by lazy { InkRepository(database.inkDao(), appScope) }
     val sheetImporter by lazy { SheetImporter(this, sheetRepository) }

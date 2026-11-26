@@ -13,10 +13,22 @@ data class InkStroke(
     val colour: Int,
     val size: Float,
     val points: List<InkPoint>,
+    val tool: StrokeTool,
 )
 
 /** One input sample of a stroke. [pressure] is 0–1, or -1 when the tool reports none. */
 data class InkPoint(val x: Float, val y: Float, val pressure: Float, val elapsedMillis: Long)
 
-/** The pen as currently chosen in the toolbar. */
-data class Pen(val colour: Int, val size: Float)
+/** What drew a stroke, which decides how it looks. [stored] is its name in the database: never change it. */
+enum class StrokeTool(val stored: String) {
+    Pen("pen"),
+
+    /** Multiplied onto the Page, so the printed notes under it stay black and sharp. */
+    Highlighter("highlighter"),
+    ;
+
+    companion object {
+        fun fromStored(stored: String): StrokeTool =
+            entries.firstOrNull { it.stored == stored } ?: throw IllegalArgumentException("Unknown stroke tool \"$stored\"")
+    }
+}

@@ -17,6 +17,23 @@ val PEN_COLOURS = listOf(
 /** Pen size presets, in points on the Page. */
 val PEN_SIZES = listOf(0.75f, 1.5f, 3f)
 
+/**
+ * Highlighter colour presets: yellow, green, pink (SPECS: Ink mode). Translucent, so they read as a highlighter even
+ * where they can't be multiplied (the stroke being drawn); multiplied onto the Page they tint the paper and leave the
+ * notes black.
+ */
+val HIGHLIGHTER_COLOURS = listOf(
+    NamedColour("Yellow", 0x99FFEB3B.toInt()),
+    NamedColour("Green", 0x8066BB6A.toInt()),
+    NamedColour("Pink", 0x80F06292.toInt()),
+)
+
+/** Highlighter size presets, in points on the Page. */
+val HIGHLIGHTER_SIZES = listOf(6f, 12f, 20f)
+
+/** Eraser size presets: the eraser circle's diameter in points on the Page. */
+val ERASER_SIZES = listOf(4f, 12f, 30f)
+
 /** Settings declared by Ink mode. Add one here and it appears on the Settings page. */
 object InkSettings {
     val penColour = ColourSetting(
@@ -37,5 +54,23 @@ object InkSettings {
         default = 1.5f,
     )
 
-    val all = listOf(penColour, penSize)
+    val highlighterColour = ColourSetting(
+        key = "ink.highlighterColour",
+        group = "Ink",
+        title = "Highlighter colour",
+        presets = HIGHLIGHTER_COLOURS.map { it.argb },
+        default = HIGHLIGHTER_COLOURS.first().argb,
+    )
+
+    val highlighterSize = SliderSetting(
+        key = "ink.highlighterSize",
+        group = "Ink",
+        title = "Highlighter size",
+        range = 4f..30f,
+        step = 1f,
+        unit = "pt",
+        default = 12f,
+    )
+
+    val all = listOf(penColour, penSize, highlighterColour, highlighterSize)
 }

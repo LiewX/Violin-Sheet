@@ -8,7 +8,9 @@ import androidx.compose.ui.Modifier
 actual fun InkLayer(
     placements: List<PagePlacement>,
     strokes: List<InkStroke>,
-    pen: Pen,
+    tool: InkTool,
+    eraser: Eraser,
     onStroke: (InkStroke) -> Unit,
+    erase: EraseInput,
     modifier: Modifier,
 ) = Unit

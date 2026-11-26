@@ -76,4 +76,19 @@ class UndoStackTest {
         stack.redo()
         assertEquals(listOf("a", "b", "c", "d"), list)
     }
+
+    @Test fun recordedCommandIsUndoneButNotAppliedAgain() {
+        stack.perform(Add("a"))
+        stack.undo()
+        list += "b" // already done, as an erase is while the pen moves
+        stack.record(Add("b"))
+
+        assertEquals(listOf("b"), list)
+        assertTrue(stack.canUndo.value)
+        assertFalse(stack.canRedo.value) // recording drops the redo, like a new edit
+        stack.undo()
+        assertEquals(emptyList(), list)
+        stack.redo()
+        assertEquals(listOf("b"), list)
+    }
 }
