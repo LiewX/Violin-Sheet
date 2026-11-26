@@ -1,1 +1,7 @@
 graphify-out/
+.gradle/
+.kotlin/
+build/
+local.properties
+.idea/
+*.iml

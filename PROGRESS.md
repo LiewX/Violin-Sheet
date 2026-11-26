@@ -5,8 +5,8 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | Feature | Sub-feature | Status | Next Step |
 |---|---|---|---|
 | Setup | Docs: spec, glossary, ADR 0001–0002, agent skills; spec re-reviewed 2026-11-26 | Done | V1.0 is broken into GitHub issues #1–#21 (`ready-for-agent`, with blocking links) |
-| Setup | Project skeleton (Kotlin Multiplatform modules, Compose Multiplatform, Android Ink API) | Not Started | Start #1 |
-| 1. Annotation editing | Sheet import and list (rename, delete with undo bar, backup without PDFs + hash reattach) | Not Started | — |
+| Setup | Project skeleton (Kotlin Multiplatform modules, Compose Multiplatform, Room storage — ADR 0003) | Done | #1 verified on the Galaxy Tab S9+ 2026-11-26. Android Ink API comes with the Ink issues |
+| 1. Annotation editing | Sheet import and list (rename, delete with undo bar, backup without PDFs + hash reattach) | In Progress | Import, naming, hash and list done (#1); rename, delete, backup reattach remain |
 | 1. Annotation editing | PDF Page rendering, zoom/pan, page turns, 1-up/2-up layout | Not Started | — |
 | 1. Annotation editing | Ink mode: pen, highlighter, eraser, side-button erase | Not Started | — |
 | 1. Annotation editing | Ink lasso: move, resize, rotate, copy/paste within a Sheet, delete | Not Started | — |

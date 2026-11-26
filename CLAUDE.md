@@ -27,6 +27,7 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
 | Language / UI | Kotlin Multiplatform + Compose Multiplatform | One codebase for Android and iPad; native ink per platform. See [ADR 0002](docs/adr/0002-kotlin-multiplatform-with-native-ink.md). |
 | Stylus input | Android: Android Ink API (Jetpack). iOS (after V1.0): PencilKit or Metal canvas | Native low-latency inking (~4ms on Samsung) and palm rejection. Do not build from scratch. Strokes are stored in a shared format, not Ink API types. |
 | Sheet rendering | PDF pages as images, Annotations as overlay layers | Sheets are scans; vector notation would need unreliable OMR. See [ADR 0001](docs/adr/0001-pdf-pages-with-overlay-annotations.md). |
+| Storage | Room (KMP) in `:core:data` | Typed queries, migrations and `Flow` on Android and iOS. See [ADR 0003](docs/adr/0003-room-for-local-storage.md). |
 | Symbols | Palette placement, no handwriting recognition in V1.0 | On-device notation recognition is a research effort of its own; a palette gives the printed look right away. |
 
 ## Architecture
