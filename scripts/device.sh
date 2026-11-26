@@ -64,3 +64,26 @@ device_test() {
 }
 
 crashes() { adb logcat -d -b crash | tail -20; }
+
+# Saves a screenshot as $1.png plus a 1000 px wide $1-small.png for looking at (a full one costs ~3k tokens to read).
+# Uses Windows' System.Drawing through PowerShell, so no Python imaging library is needed. Paths must not contain a '.
+shot() {
+    adb exec-out screencap -p >"$1.png" || return 1
+    powershell.exe -NoProfile -Command "Add-Type -AssemblyName System.Drawing
+        \$s = [System.Drawing.Image]::FromFile('$(cygpath -w "$1.png")')
+        \$h = [int](\$s.Height * 1000 / \$s.Width)
+        \$d = New-Object System.Drawing.Bitmap \$s, 1000, \$h
+        \$d.Save('$(cygpath -w "$1-small.png")', [System.Drawing.Imaging.ImageFormat]::Png)
+        \$d.Dispose(); \$s.Dispose()"
+}
+
+# Prints the RGB at each point of a PNG, in its own pixel coordinates: `pixels shot.png 600,718 760,718`.
+pixels() {
+    local png
+    png=$(cygpath -w "$1")
+    shift
+    powershell.exe -NoProfile -Command "Add-Type -AssemblyName System.Drawing
+        \$b = [System.Drawing.Bitmap]::FromFile('$png')
+        foreach (\$p in '$*'.Split(' ')) { \$x, \$y = \$p.Split(','); \$c = \$b.GetPixel([int]\$x, [int]\$y); \"\$p (\$(\$c.R), \$(\$c.G), \$(\$c.B))\" }
+        \$b.Dispose()"
+}

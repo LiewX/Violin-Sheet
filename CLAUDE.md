@@ -13,21 +13,9 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
 
 ## Working Style
 
-These rules are for the main session, which orchestrates issue work. Implementer subagents follow only what their plan lists ([`docs/agents/orchestration.md`](docs/agents/orchestration.md)).
-
-- **Ask before assuming** when a requirement is unclear: present the tradeoff, don't pick silently.
-- **Justify architectural decisions** in one or two sentences when you introduce them. Record hard-to-reverse ones as an ADR.
-- **Grill before big changes.** When a request changes scope, adds or removes a feature, or forces a significant design decision, run a grilling session (`/grill-with-docs`) before implementing. Update `docs/SPECS.md`, `GLOSSARY.md` and `docs/adr/` from its outcome.
-- **Workflow rules are loops.** A new or changed workflow rule (in this file or `docs/agents/`) is grilled before it is written, and written as a loop: who does what, in which order, and what happens when a step fails.
-- **Review the whole spec after every grilling.** Once its outcome is written into the docs, read `docs/SPECS.md` end to end (with `GLOSSARY.md`, `CLAUDE.md` and the ADRs) and check for contradictions, stale wording and gaps the new decisions created. Fix wording-only issues directly; bring anything that needs a decision back to the user.
-- **Don't implement Post-V1.0 or Nice-to-have features**, even if asked in passing. Note them in `PROGRESS.md` instead.
-- **Review before committing** an issue or a small fix. Run the two reviews of the `mattpocock-skills:code-review` process (coding standards, and spec against the issue's acceptance criteria) as subagents spawned directly with `model: opus`; the skill itself can't set their model. Fix or explicitly defer each finding, rerun the build, then commit.
-- **Working through issues:** once an issue is reviewed, built and checked on the tablet over adb, the orchestrator commits straight to `main` and pushes without asking. End the message with `Closes #N`, so the push closes the issue. Then go straight on to the next issue. Stop only for something that needs the user: a design change, a spec gap, or a decision the docs don't settle.
-- **Manual checks:** for each finished issue, the orchestrator adds the things only a person can judge (S Pen feel, palm rejection, visual quality), from the implementer's report and its own review, to [`docs/manual-checks.md`](docs/manual-checks.md). The user works through that list when they check in.
-- **Device check early:** when an issue's acceptance needs the tablet, the orchestrator runs `adb devices` while planning, before spawning the implementer, and asks the user to plug it in if needed.
-- **Orchestration and model choice:** issue work always runs as in [`docs/agents/orchestration.md`](docs/agents/orchestration.md): an Opus orchestrator (this session; check at start that it is on Opus) plans, delegates to one implementer subagent per issue on the model of its `model:` label, reviews on Opus and commits.
-- **Update `PROGRESS.md` after every session.**
-- **At cleanup** (the user asks before ending a session), update [`docs/workflow-ideas.md`](docs/workflow-ideas.md): add what slowed the orchestration or caused mistakes, each with a concrete fix, and mark earlier ideas **done** or **dropped**. (Implementers' friction is copied in at each issue's commit.)
+- **The main session** (the orchestrator) loads the `orchestrate` skill at session start, before any issue work, grilling or cleanup. It holds the working style, the issue loop, progress tracking and the cleanup with its token review.
+- **Subagents** follow their agent file (`.claude/agents/implementer.md`, `reviewer.md`) and the plan.
+- **For everyone:** don't implement Post-V1.0 or Nice-to-have features, even if asked in passing; don't commit unless you are the orchestrator.
 
 ## Tech Stack
 
@@ -49,15 +37,10 @@ These rules are for the main session, which orchestrates issue work. Implementer
 | Before committing | `./gradlew build` (all tests, lint, release variants) | ~5–7 min |
 | Install on the tablet | `./gradlew :androidApp:installDebug` | ~15 s |
 
-- **Edits and new files:** new files with the Write tool, small changes with the Edit tool. A multi-step edit script is written with the Write tool into the scratchpad (never the repo, so the tree stays clean), then run with `python -I <file>`. Long multi-line heredocs passed to the Bash tool fail to parse (`unexpected EOF while looking for matching '`), and then nothing runs.
+- **Edits and new files:** new files with the Write tool, small changes with the Edit tool. An edit script, only for a mechanical change across many files, is written with the Write tool into the scratchpad (never the repo, so the tree stays clean), then run with `python -I <file>`. Long multi-line heredocs passed to the Bash tool fail to parse (`unexpected EOF while looking for matching '`), and then nothing runs.
 - **Read build output** with `--console=plain 2>&1 | grep -vE "^> Task|^\[=|^$"`. It drops the task lines but keeps every warning and error. Don't pipe Gradle into `head`, which cuts off the error. If a build fails with "The process cannot access the file because it is being used by another process" (a daemon holds a jar), run `./gradlew --stop` and rebuild.
-- **adb from Git Bash:** prefix commands with `MSYS_NO_PATHCONV=1`, or Git Bash rewrites device paths (`/sdcard/...` becomes `C:/Program Files/Git/sdcard/...`). Pass local files as Windows paths (`C:/...`).
-- **Device checks:** `source scripts/device.sh` gives `install_app`, `launch`, `tap_text <label regex>`, `type_into <field regex> <text>`, `has_text`, `db <sql>` and `crashes`. `adb shell input stylus swipe x1 y1 x2 y2` draws a real pen stroke (tool type STYLUS). Snackbar text doesn't show in uiautomator dumps, so check messages with a screenshot. Each dump takes about 2 s: for timed checks (an Undo window), read every position first and tap by coordinates without dumping in between, and read positions again after the screen changes. Gestures `adb shell input` can't do (pinch, multi-finger) go in a UiAutomator test under `androidApp/src/androidTest`, run with `device_test <Class>`: it keeps the app's data, unlike `connectedAndroidTest`, which uninstalls the app. `sendevent` is blocked by SELinux. The raw commands (debug build):
-  - Launch: `adb shell am start -n com.violinsheet/com.violinsheet.android.MainActivity`
-  - Screenshot: `adb exec-out screencap -p > shot.png`
-  - Crashes: `adb logcat -d -b crash`
-  - Database: copy `violinsheet.db`, `-wal` and `-shm` with `adb exec-out run-as com.violinsheet cat databases/<file>` and open them with Python's `sqlite3`.
-- **The tablet holds the user's own data** (Sheets, Ink). Never `pm clear` or uninstall the app without asking. Never change a database version that has already been installed on the tablet, even before it is committed: add the next version with a migration instead.
+- **Tablet checks:** load the `device-check` skill (helpers in `scripts/device.sh`, pen strokes, screenshots, traps). `adb` lives at `$ANDROID_HOME/platform-tools/adb.exe`.
+- **The tablet holds the user's own data** (Sheets, Ink). Never run `connectedAndroidTest` (it uninstalls the app). Never `pm clear` or uninstall the app: subagents never, the orchestrator only after asking the user. Never change a database version that has already been installed on the tablet, even before it is committed: add the next version with a migration instead.
 - **Versions** live only in `gradle/libs.versions.toml`. Its header lists which versions must move together.
 
 ## Architecture
@@ -76,8 +59,9 @@ CLAUDE.md, GLOSSARY.md, PROGRESS.md   Root docs (skills expect GLOSSARY.md at th
 docs/
   SPECS.md                            What to build
   adr/                                Decisions, numbered NNNN-title.md
-  agents/                             Config for the agent skills (issue tracker, labels, domain docs) and orchestration
+  agents/                             Config for the agent skills (issue tracker, labels, domain docs)
   workflow-ideas.md                   Workflow problems and fixes, reviewed at each cleanup
+.claude/                             Project settings (skills turned off), agents/ (implementer, reviewer), skills/ (orchestrate, device-check)
 gradle/libs.versions.toml             Every dependency and plugin version, nowhere else
 buildSrc/                             Convention plugins (violinsheet.kmp-library: shared KMP + Android setup)
 androidApp/                           Android shell: Application, MainActivity, manifest, wiring. No feature logic
@@ -90,7 +74,7 @@ feature/viewer/                       Home screen (Sheet list) and Page viewer: 
 feature/annotation/                   Modes, toolbar, Symbols, Covers, Text boxes, layers, undo stack
 feature/settings/                     The Settings page, generated from each feature's declared Settings
 feature/metronome/                    Stub (Post-V1.0)
-scripts/                              Dev helper scripts, created when the first one is needed
+scripts/                              Dev helpers: device.sh (tablet), agent-tokens.py (subagent token review)
 graphify-out/                         Generated knowledge graph, git-ignored
 handoffs/                             Orchestrator ↔ implementer plan and report files, git-ignored, deleted after each push
 ```
@@ -108,15 +92,6 @@ handoffs/                             Orchestrator ↔ implementer plan and repo
 - **Page transitions:** pre-render at least the next Page so page turns are instant and silent. Automatic page flipping (Feature 3) needs zero blank-flash latency.
 - **Surround:** neutral dark grey (not pure black) around the Sheet to reduce eye strain. Never invert the Sheet itself.
 
-## Progress Tracking
-
-`PROGRESS.md` is a one-page status overview. Detailed work items live in GitHub Issues; link to them rather than repeating them.
-
-| Feature | Sub-feature | Status | Next Step |
-|---|---|---|---|
-
-Status is one of: Not Started / In Progress / Done / Post-V1.0 / Nice-to-have.
-
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
@@ -126,22 +101,9 @@ Rules:
 - Search order: graphify always comes first. After it, use Grep for exact matches (symbol tracing, refactoring, regex) and `mgrep "<natural-language query>"` for intent search (code exploration, feature discovery, onboarding). This overrides the mgrep plugin's "replaces all built-in search tools" rule.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After a commit that changes code, the orchestrator runs `/graphify update` (implementers don't; see `docs/agents/orchestration.md`) to keep the graph current (AST-only, no API cost). If the skill is unavailable, run `graphify update .` in a terminal outside Claude Code.
+- Only the orchestrator updates the graph, after each commit that changes code (`orchestrate` skill).
 
 ## Agent skills
 
-### Issue tracker
-
-Issues live in this repo's GitHub Issues, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
-
-### Orchestration
-
-Issue work runs as an Opus orchestrator with implementer and review subagents. See `docs/agents/orchestration.md`. Each issue has a `model:opus` or `model:sonnet` label (`docs/agents/triage-labels.md`).
-
-### Domain docs
-
-Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+- **Issue tracker:** GitHub Issues via `gh` (`docs/agents/issue-tracker.md`). **Triage labels**, including the `model:opus`/`model:sonnet` label each issue carries: `docs/agents/triage-labels.md`. **Domain docs:** `docs/agents/domain.md`.
+- **Orchestration:** the `orchestrate` skill (main session); agent types in `.claude/agents/`; tablet checks in the `device-check` skill.

@@ -16,7 +16,7 @@ Edit the "Label in our tracker" column to match whatever vocabulary you actually
 
 ## Model labels
 
-Every issue also gets exactly one model label at triage. It picks the implementer subagent's model ([orchestration.md](orchestration.md)).
+Every issue also gets exactly one model label at triage. It picks the implementer subagent's model (the `orchestrate` skill, `.claude/skills/orchestrate/SKILL.md`).
 
 | Label | Use for |
 |---|---|
