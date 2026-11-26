@@ -9,6 +9,7 @@ kotlin {
         commonMain.dependencies {
             api(libs.room.runtime)
             api(libs.kotlinx.coroutines.core)
+            api(project(":core:ink"))
         }
         androidMain.dependencies {
             implementation(project(":core:pdf"))

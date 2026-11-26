@@ -78,6 +78,16 @@ class SheetLayoutTest {
         assertEquals(Offset(-500f, 0f), overscroll)
     }
 
+    @Test fun placementMapsPageCornersOntoTheZoomedFitRect() {
+        val fit = Rect(405f, 0f, 1000f, 842f)
+        val zoom = Zoom(scale = 2f, offset = Offset(-300f, -100f))
+        val placement = zoom.placement(0, a4, fit)
+        val onScreen = zoom.toScreen(fit)
+        assertEquals(onScreen.topLeft, placement.toScreen(Offset.Zero))
+        assertEquals(onScreen.bottomRight.x, placement.toScreen(Offset(a4.width, a4.height)).x, 0.01f)
+        assertEquals(onScreen.bottomRight.y, placement.toScreen(Offset(a4.width, a4.height)).y, 0.01f)
+    }
+
     @Test fun contentSmallerThanScreenStaysCentred() {
         val narrow = Rect(250f, 0f, 750f, 1000f)
         val (panned, overscroll) = Zoom().pannedBy(Offset(100f, 0f), viewport, narrow)

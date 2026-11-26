@@ -41,3 +41,35 @@ data class ChoiceSetting(
 
     override fun decode(stored: String?) = stored?.takeIf { id -> choices.any { it.id == id } } ?: default
 }
+
+/** A colour (ARGB), shown as swatches of [presets]. */
+data class ColourSetting(
+    override val key: String,
+    override val group: String,
+    override val title: String,
+    val presets: List<Int>,
+    override val default: Int,
+) : Setting<Int> {
+    override fun encode(value: Int) = value.toString()
+
+    override fun decode(stored: String?) = stored?.toIntOrNull() ?: default
+}
+
+/** A number in [range], moved in steps of [step], shown as a slider labelled in [unit]. */
+data class SliderSetting(
+    override val key: String,
+    override val group: String,
+    override val title: String,
+    val range: ClosedFloatingPointRange<Float>,
+    val step: Float,
+    val unit: String,
+    override val default: Float,
+) : Setting<Float> {
+    init {
+        require(default in range) { "$key: default $default is outside $range" }
+    }
+
+    override fun encode(value: Float) = value.coerceIn(range).toString()
+
+    override fun decode(stored: String?) = stored?.toFloatOrNull()?.coerceIn(range) ?: default
+}

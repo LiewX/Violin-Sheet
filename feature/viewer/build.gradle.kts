@@ -9,6 +9,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":core:data"))
             api(project(":core:pdf"))
+            api(project(":core:ink"))
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

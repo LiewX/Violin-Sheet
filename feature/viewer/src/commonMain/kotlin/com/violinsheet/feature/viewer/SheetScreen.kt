@@ -35,7 +35,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.violinsheet.core.ink.PagePlacement
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
@@ -46,9 +49,16 @@ private val Surround = Color(0xFF3A3A3A)
 /** How long a zoom or pan must rest before the sharp render of what is on screen starts. */
 private const val SETTLE_MILLIS = 150L
 
-/** Reads one Sheet: one Page in portrait, two side by side in landscape, with pinch zoom. */
+/**
+ * Reads one Sheet: one Page in portrait, two side by side in landscape, with pinch zoom. [overlay] draws Annotations
+ * over the Pages, given where each shown Page is on screen; [toolbar] sits at the bottom edge.
+ */
 @Composable
-fun SheetScreen(viewModel: SheetViewModel) {
+fun SheetScreen(
+    viewModel: SheetViewModel,
+    overlay: @Composable (List<PagePlacement>) -> Unit = {},
+    toolbar: @Composable () -> Unit = {},
+) {
     val index by viewModel.pageIndex.collectAsState()
     val pageSizes by viewModel.pageSizes.collectAsState()
     val advanceByOne by viewModel.advanceByOne.collectAsState()
@@ -83,8 +93,8 @@ fun SheetScreen(viewModel: SheetViewModel) {
         }
         // Clipped, so zoomed content never draws over the status bar or the surround.
         Box(Modifier.fillMaxSize().clipToBounds().sheetGestures(gestures)) {
-            // Ink (#6) goes inside this layer too, in fit coordinates, so it zooms with the Pages. The sharp overlay
-            // below is drawn in screen coordinates, through Zoom.toScreen.
+            // The sharp Pages and the Annotation overlay below are drawn in screen coordinates, through the same
+            // Zoom, so they line up with this layer at every zoom.
             Box(
                 Modifier.fillMaxSize().graphicsLayer {
                     transformOrigin = TransformOrigin(0f, 0f)
@@ -97,7 +107,18 @@ fun SheetScreen(viewModel: SheetViewModel) {
                 shown.forEachIndexed { slot, page -> FitPage(viewModel, page, rects[slot]) }
             }
             if (zoom.isZoomed) SharpPages(viewModel, shown, rects, zoom, viewport)
+            overlay(shown.mapIndexed { slot, page -> zoom.placement(page, sizes[page], rects[slot]) })
+            // Page labels for accessibility, above the overlay: Compose drops nodes that a later sibling (the
+            // full-screen Ink view) covers. No input handling, so touches and the pen pass through.
+            val zoomLabel = if (zoom.isZoomed) ", zoomed ${(zoom.scale * 100).roundToInt()}%" else ""
+            shown.forEachIndexed { slot, page ->
+                Box(
+                    Modifier.at(zoom.toScreen(rects[slot]))
+                        .semantics { contentDescription = "Page ${page + 1} of ${viewModel.pageCount}$zoomLabel" },
+                )
+            }
         }
+        Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)) { toolbar() }
         if (spread) {
             FilterChip(
                 selected = advanceByOne,
@@ -134,7 +155,7 @@ private fun FitPage(viewModel: SheetViewModel, page: Int, rect: Rect) {
             Text("Couldn't show Page ${page + 1}", color = Color.White)
         } else {
             (ready ?: lastRendered)?.let {
-                Image(it, "Page ${page + 1} of ${viewModel.pageCount}", Modifier.fillMaxSize(), contentScale = ContentScale.FillBounds)
+                Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.FillBounds) // labelled above the overlay
             }
         }
     }

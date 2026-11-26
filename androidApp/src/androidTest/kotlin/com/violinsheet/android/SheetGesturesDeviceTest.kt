@@ -7,7 +7,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,22 +39,22 @@ class SheetGesturesDeviceTest {
 
     private fun page(number: Int) = device.wait(Until.findObject(By.descStartsWith("Page $number of")), 2_000)
 
+
     @Test
     fun pinchZoomsSwipePansAndSwipePastEdgeTurns() {
-        val fit = page(1).visibleBounds
         page(1).pinchOpen(0.7f)
         device.waitForIdle()
-        val zoomed = page(1).visibleBounds
-        assertTrue("pinch didn't zoom: $fit -> $zoomed", zoomed.width() > fit.width() * 1.3)
+        // No direct zoom check: Compose doesn't refresh the accessibility tree after a zoom (bounds and labels stay
+        // as at fit). Zoom shows in behaviour instead: below, a swipe that would turn the page at fit only pans.
         // For checking by eye that the zoomed view turns sharp: adb pull /sdcard/Android/data/com.violinsheet/files/zoomed.png
         Thread.sleep(1_000)
         device.takeScreenshot(File(instrumentation.targetContext.getExternalFilesDir(null), "zoomed.png"))
 
-        // While zoomed, a short swipe pans and doesn't turn.
+        // While zoomed, a short swipe pans and doesn't turn (at fit it would turn to Pages 2-3 or 3-4).
         val y = device.displayHeight / 2
         device.swipe(device.displayWidth / 2 + 150, y, device.displayWidth / 2 - 150, y, 20)
         device.waitForIdle()
-        assertNotNull("a pan turned the page", page(1))
+        assertNull("a pan turned the page", device.wait(Until.findObject(By.descStartsWith("Page 3 of")), 1_000))
 
         // Swiping on keeps panning until the content's edge, then turns the page.
         repeat(8) {

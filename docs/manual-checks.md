@@ -2,6 +2,14 @@
 
 Things to try on the Galaxy Tab S9+ that automated adb checks can't judge. Each issue adds its items when it's committed. Tick an item when it's checked; delete an issue's block once all its items are ticked. Report anything that fails, and it becomes a fix.
 
+## #6 Ink pen
+
+- [ ] Writing with the S Pen feels immediate (no visible lag behind the nib), and lines look smooth with pressure
+- [ ] Rest your palm on the screen while writing: no stray marks, and the page doesn't move
+- [ ] A finger never draws; it still turns pages and zooms
+- [ ] Strokes stay on the notes they mark when you zoom, rotate, or switch between 1-up and 2-up
+- [ ] Toolbar colours and sizes are easy to hit; Settings → Ink sets the pen a newly opened Sheet starts with
+
 ## #5 Settings
 
 - [ ] The gear (top right of the home screen) and the Settings page look and read right

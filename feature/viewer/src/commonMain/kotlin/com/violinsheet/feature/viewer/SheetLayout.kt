@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.IntSize
+import com.violinsheet.core.ink.PagePlacement
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -66,6 +67,10 @@ internal data class Zoom(val scale: Float = 1f, val offset: Offset = Offset.Zero
 
     /** Where [fit] (a rect in fit coordinates) is on screen. */
     fun toScreen(fit: Rect) = Rect(fit.topLeft * scale + offset, fit.size * scale)
+
+    /** Where Page [pageIndex] (of [pageSize] points, laid out at [fit]) is on screen, for Annotations to map through. */
+    fun placement(pageIndex: Int, pageSize: Size, fit: Rect) =
+        PagePlacement(pageIndex, pageSize, scale * fit.width / pageSize.width, fit.topLeft * scale + offset)
 
     /** Zooms by [factor] around [centroid] (screen), within 1×–[MAX_ZOOM], then keeps [content] on screen. */
     fun zoomedBy(factor: Float, centroid: Offset, viewport: Size, content: Rect): Zoom {

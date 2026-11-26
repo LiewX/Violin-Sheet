@@ -47,6 +47,19 @@ class SettingsTest {
         assertFailsWith<IllegalArgumentException> { choice("x").encode("three") }
     }
 
+    @Test fun sliderKeepsStoredValuesInRange() {
+        val size = SliderSetting("ink.size", "Ink", "Size", 0.5f..10f, 0.5f, "pt", 1.5f)
+        assertEquals(10f, size.decode("40"))
+        assertEquals(1.5f, size.decode("not a number"))
+        assertEquals("0.5", size.encode(0.1f))
+    }
+
+    @Test fun colourRoundTrips() {
+        val colour = ColourSetting("ink.colour", "Ink", "Colour", listOf(0xFF000000.toInt()), 0xFF000000.toInt())
+        assertEquals(0xFF1565C0.toInt(), colour.decode(colour.encode(0xFF1565C0.toInt())))
+        assertEquals(0xFF000000.toInt(), colour.decode(null))
+    }
+
     @Test fun unsetSettingReadsItsDefault() = runTest {
         assertEquals("two", SettingsStore(FakeSettingDao(), this).observe(choice("x")).first())
     }

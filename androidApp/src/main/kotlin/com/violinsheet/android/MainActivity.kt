@@ -18,6 +18,12 @@ import androidx.navigation.compose.rememberNavController
 import com.violinsheet.core.data.sheetPdf
 import com.violinsheet.core.pdf.openPdf
 import com.violinsheet.feature.settings.SettingsScreen
+import com.violinsheet.feature.annotation.AnnotationViewModel
+import com.violinsheet.feature.annotation.InkToolbar
+import com.violinsheet.core.ink.InkLayer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Modifier
 import com.violinsheet.feature.viewer.SheetListScreen
 import com.violinsheet.feature.viewer.SheetListViewModel
 import com.violinsheet.feature.viewer.SheetScreen
@@ -64,7 +70,15 @@ class MainActivity : ComponentActivity() {
                         val pdfFile = entry.arguments?.getString("pdfFile").orEmpty()
                         // The list only opens Sheets whose PDF exists (a missing one shows the re-import prompt).
                         val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile)), sheetId, app.sheetRepository, app.settingsStore) }
-                        SheetScreen(viewModel)
+                        val annotations = viewModel { AnnotationViewModel(sheetId, app.inkRepository, app.settingsStore, app.appScope) }
+                        val strokes by annotations.strokes.collectAsState()
+                        val pen by annotations.pen.collectAsState()
+                        val saveFailed by annotations.saveFailed.collectAsState()
+                        SheetScreen(
+                            viewModel,
+                            overlay = { placements -> InkLayer(placements, strokes, pen, annotations::addStroke, Modifier.fillMaxSize()) },
+                            toolbar = { InkToolbar(pen, annotations::setPen, saveFailed) },
+                        )
                     }
                 }
             }
