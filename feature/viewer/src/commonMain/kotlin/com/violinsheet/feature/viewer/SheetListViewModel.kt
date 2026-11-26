@@ -20,7 +20,7 @@ class SheetListViewModel(repository: SheetRepository) : ViewModel() {
     val message: StateFlow<String?> = _message.asStateFlow()
 
     /** Runs a platform import (file picker result) in the ViewModel scope so rotation doesn't cancel it. */
-    fun import(importSheet: suspend () -> Unit) {
+    fun runImport(importSheet: suspend () -> Unit) {
         viewModelScope.launch {
             try {
                 importSheet()

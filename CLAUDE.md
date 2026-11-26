@@ -18,7 +18,9 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
 - **Grill before big changes.** When a request changes scope, adds or removes a feature, or forces a significant design decision, run a grilling session (`/grill-with-docs`) before implementing. Update `docs/SPECS.md`, `GLOSSARY.md` and `docs/adr/` from its outcome.
 - **Review the whole spec after every grilling.** Once its outcome is written into the docs, read `docs/SPECS.md` end to end (with `GLOSSARY.md`, `CLAUDE.md` and the ADRs) and check for contradictions, stale wording and gaps the new decisions created. Fix wording-only issues directly; bring anything that needs a decision back to the user.
 - **Don't implement Post-V1.0 or Nice-to-have features**, even if asked in passing. Note them in `PROGRESS.md` instead.
+- **Review before committing an issue.** Run `/code-review` (the `mattpocock-skills:code-review` skill) on the issue's changes: it checks them against the coding standards and the issue's acceptance criteria. Fix or explicitly defer each finding, rerun the build, then commit.
 - **Update `PROGRESS.md` after every session.**
+- **At cleanup** (the user asks before ending a session), update [`docs/workflow-ideas.md`](docs/workflow-ideas.md): add what slowed the session or caused mistakes, each with a concrete fix, and mark earlier ideas **done** or **dropped**.
 
 ## Tech Stack
 
@@ -32,12 +34,41 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
 
 ## Architecture
 
-- **Modules:** `:androidApp` (V1.0) and `:iosApp` (after V1.0), plus shared KMP modules `:core:pdf`, `:core:ink`, `:core:data`, `:feature:viewer`, `:feature:annotation`. Stub `:feature:metronome` for later. Platform code (ink canvas, PDF rendering, file picker, pen hardware mapping) goes in `androidMain`/`iosMain`; everything else in `commonMain`.
+- **Modules:** see [Directory layout](#directory-layout). Platform code (ink canvas, PDF rendering, file picker, pen hardware mapping) goes in `androidMain`/`iosMain`; everything else in `commonMain`.
 - **State:** MVVM with Kotlin `StateFlow`.
 - **Settings:** each feature module declares its own Settings; the settings page is generated from those declarations. Never hard-code a feature's Setting in the page.
 - **Undo/redo:** command-pattern undo stack from day one, covering Ink (including lasso actions), Symbols, Covers and Text boxes. Annotation editing without solid undo is unusable, and adding it later is costly.
 - **Layers:** Ink, Edit mode content (Covers under Symbols) and Text boxes live on three separate layers, each with its own visibility toggle.
 - **Coordinates:** Annotations and stroke sizes are stored in Page coordinates, never screen pixels, so they stay put across zoom, rotation and layout.
+
+## Directory layout
+
+```
+CLAUDE.md, GLOSSARY.md, PROGRESS.md   Root docs (skills expect GLOSSARY.md at the root)
+docs/
+  SPECS.md                            What to build
+  adr/                                Decisions, numbered NNNN-title.md
+  agents/                             Config for the agent skills (issue tracker, labels, domain docs)
+  workflow-ideas.md                   Workflow problems and fixes, reviewed at each cleanup
+gradle/libs.versions.toml             Every dependency and plugin version, nowhere else
+buildSrc/                             Convention plugins (violinsheet.kmp-library: shared KMP + Android setup)
+androidApp/                           Android shell: Application, MainActivity, manifest, wiring. No feature logic
+iosApp/                               (after V1.0) Xcode project
+core/data/                            Room database, entities, DAOs, repositories, imported-file storage
+  schemas/                            Exported Room schemas, kept in git for migrations
+core/pdf/                             PDF Page rendering (Android PdfRenderer, iOS PDFKit)
+core/ink/                             Shared stroke format; native ink canvas per platform
+feature/viewer/                       Home screen (Sheet list) and Page viewer: layout, page turns, zoom
+feature/annotation/                   Modes, toolbar, Symbols, Covers, Text boxes, layers, undo stack
+feature/metronome/                    Stub (Post-V1.0)
+scripts/                              Dev helper scripts, created when the first one is needed
+graphify-out/                         Generated knowledge graph, git-ignored
+```
+
+- Inside a module: `src/{commonMain,androidMain,iosMain,commonTest}/kotlin/com/violinsheet/<module>/`, where the package matches the Gradle path (`:core:data` → `com.violinsheet.core.data`).
+- One main class per file, named after it. A platform file that is the counterpart of a common file of the same name takes a `.android.kt`/`.ios.kt` suffix (`AppDatabase.android.kt` builds the `AppDatabase` from `AppDatabase.kt`).
+- Keep packages flat until a module has around ten files, then split by feature area (`viewer/home`, `viewer/page`), not by layer.
+- A new shared module needs an entry in `settings.gradle.kts`, a row in this tree and the `violinsheet.kmp-library` plugin.
 
 ## UI/UX
 

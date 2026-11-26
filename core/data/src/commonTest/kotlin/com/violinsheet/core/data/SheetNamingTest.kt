@@ -22,5 +22,7 @@ class SheetNamingTest {
 
     @Test fun baseNameFreeAgainAfterRename() = assertEquals("Etude", sheetNameFor("Etude.pdf", listOf("Etude (2)")))
 
+    @Test fun clashIgnoresCase() = assertEquals("etude (2)", sheetNameFor("etude.pdf", listOf("Etude")))
+
     @Test fun blankNameFallsBack() = assertEquals("Sheet", sheetNameFor(".pdf", emptyList()))
 }

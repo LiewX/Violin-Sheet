@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel = viewModel { SheetListViewModel(app.sheetRepository) }
             val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-                if (uri != null) viewModel.import { app.sheetImporter.import(uri) }
+                if (uri != null) viewModel.runImport { app.sheetImporter.import(uri) }
             }
             MaterialTheme {
                 SheetListScreen(viewModel, onImport = { picker.launch(arrayOf("application/pdf")) })

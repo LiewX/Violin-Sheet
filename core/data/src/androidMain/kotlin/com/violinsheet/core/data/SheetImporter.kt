@@ -3,7 +3,6 @@ package com.violinsheet.core.data
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
-import androidx.room.Room
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -11,11 +10,6 @@ import java.io.IOException
 import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.util.UUID
-
-fun appDatabase(context: Context): AppDatabase =
-    Room.databaseBuilder<AppDatabase>(context, context.getDatabasePath("violinsheet.db").absolutePath)
-        .setQueryCoroutineContext(Dispatchers.IO)
-        .build()
 
 /** Copies a picked PDF into app storage and adds it as a Sheet. The copy is never modified (ADR 0001). */
 class SheetImporter(private val context: Context, private val repository: SheetRepository) {
