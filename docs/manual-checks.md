@@ -2,6 +2,14 @@
 
 Things to try on the Galaxy Tab S9+ that automated adb checks can't judge. Each issue adds its items when it's committed. Tick an item when it's checked; delete an issue's block once all its items are ticked. Report anything that fails, and it becomes a fix.
 
+## #4 Zoom, pan and rotation layout
+
+- [ ] Pinch zoom and one-finger pan feel smooth; the zoomed view turns sharp a moment after you stop
+- [ ] Swiping past the Page edge while zoomed turns the page at a natural point (not too eager, not too stubborn)
+- [ ] Decide if this is fine: a turn or a rotation resets zoom to fit
+- [ ] Decide if this is fine: a spread starts at the current Page, so portrait Page 2 rotates to Pages 2–3 (not 1–2 as in a printed book)
+- [ ] The "Advance by one" chip (landscape, top right) is easy to find and doesn't get in the way of the music
+
 ## #3 Manage Sheets
 
 - [ ] Rename and delete from the ⋮ menu feel right, and the Undo bar is easy to hit in its 10 seconds

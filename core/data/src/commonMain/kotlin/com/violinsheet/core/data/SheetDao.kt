@@ -23,6 +23,12 @@ interface SheetDao {
     @Query("SELECT * FROM Sheet WHERE id = :id")
     suspend fun get(id: Long): Sheet?
 
+    @Query("SELECT * FROM Sheet WHERE id = :id")
+    fun observe(id: Long): Flow<Sheet?>
+
+    @Query("UPDATE Sheet SET advanceByOne = :advanceByOne WHERE id = :id")
+    suspend fun setAdvanceByOne(id: Long, advanceByOne: Boolean)
+
     @Query("UPDATE Sheet SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun setDeletedAt(id: Long, deletedAt: Long)
 

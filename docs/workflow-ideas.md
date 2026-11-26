@@ -26,3 +26,10 @@ Status: **open**, **done** or **dropped**.
 | 11 | uiautomator dumps don't include snackbar text, so two message checks came back empty although the messages showed. | Check snackbar messages with `screencap` and look at the image (noted in `CLAUDE.md` → Build & run). | done |
 | 12 | Driving a text field over adb took three tries: keys sent before the field had focus went nowhere, and ctrl+A didn't select. | Tap the field first, then send `KEYCODE_MOVE_END` plus enough `KEYCODE_DEL`s. Add a `type_into <field> <text>` helper to `scripts/device.sh` if this comes up again. | open |
 | 13 | Each uiautomator dump over adb takes about 2 seconds, so a timed check (Undo within 10 s) ran out of time, and a tap at a remembered position hit the wrong row after the list changed (Back then closed the app). | For timed checks, read every position before the action and tap by coordinates without dumping in between. After the list changes, read positions again. | open |
+
+## 2026-11-26: #4
+
+| # | Problem | Fix | Status |
+|---|---|---|---|
+| 14 | Pinch can't be driven from `adb shell input`, and `sendevent` is blocked by SELinux even for the `input` group. Two attempts were wasted before switching to UiAutomator. | Gesture checks that need several fingers go straight into a UiAutomator test run with `device_test` (`CLAUDE.md` → Build & run). | done |
+| 15 | `am instrument` restarts the app's process, so a throwaway test that expected an already-open Sheet found the home screen. | On-device tests open the screen they need themselves, and save any screenshot they need with `UiDevice.takeScreenshot` (as `SheetGesturesDeviceTest` does). | done |

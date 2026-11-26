@@ -45,4 +45,13 @@ db() {
     rm -rf "$dir"
 }
 
+# Runs an on-device test class from androidApp/src/androidTest, e.g. `device_test SheetGesturesDeviceTest`.
+# Installs the app and test APKs and runs them with `am instrument`, so the app's data stays
+# (connectedAndroidTest would uninstall the app afterwards).
+device_test() {
+    ./gradlew :androidApp:installDebug :androidApp:installDebugAndroidTest -q --console=plain 2>&1 | grep -vE "^\[=|^$|SDK XML|strip the following"
+    [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "build failed; not running $1" >&2; return 1; }
+    adb shell am instrument -w -e class "$APP.android.$1" "$APP.test/androidx.test.runner.AndroidJUnitRunner" | tail -15
+}
+
 crashes() { adb logcat -d -b crash | tail -20; }

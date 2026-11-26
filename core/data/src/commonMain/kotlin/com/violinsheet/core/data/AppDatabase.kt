@@ -8,9 +8,10 @@ import androidx.room.RoomDatabaseConstructor
 
 @Database(
     entities = [Sheet::class],
-    version = 2,
+    version = 3,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // Sheet.deletedAt
+        AutoMigration(from = 2, to = 3), // Sheet.advanceByOne
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)

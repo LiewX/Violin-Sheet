@@ -13,4 +13,6 @@ data class Sheet(
     val pdfFile: String,
     /** When the user deleted it (epoch ms). Hidden from the list, and purged once the Undo bar has expired. */
     val deletedAt: Long? = null,
+    /** In a two-Page spread, a turn advances one Page instead of two. Null: follow the app-wide Setting (#5). */
+    val advanceByOne: Boolean? = null,
 )

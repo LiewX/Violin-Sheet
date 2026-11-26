@@ -47,17 +47,18 @@ class MainActivity : ComponentActivity() {
                         SheetListScreen(
                             viewModel,
                             onImport = { importPicker.launch(PDF_MIME_TYPES) },
-                            onOpen = { nav.navigate("sheet/${Uri.encode(it.pdfFile)}") },
+                            onOpen = { nav.navigate("sheet/${it.id}/${Uri.encode(it.pdfFile)}") },
                             onReattach = {
                                 reattachId = it.id
                                 reattachPicker.launch(PDF_MIME_TYPES)
                             },
                         )
                     }
-                    composable("sheet/{pdfFile}") { entry ->
+                    composable("sheet/{id}/{pdfFile}") { entry ->
+                        val sheetId = entry.arguments?.getString("id")?.toLongOrNull() ?: 0
                         val pdfFile = entry.arguments?.getString("pdfFile").orEmpty()
                         // The list only opens Sheets whose PDF exists (a missing one shows the re-import prompt).
-                        val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile))) }
+                        val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile)), sheetId, app.sheetRepository) }
                         SheetScreen(viewModel)
                     }
                 }
