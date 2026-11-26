@@ -24,6 +24,7 @@ android {
 
 dependencies {
     implementation(project(":feature:viewer"))
+    implementation(project(":feature:settings"))
     implementation(compose.material3)
     implementation(libs.activity.compose)
     implementation(libs.navigation.compose)

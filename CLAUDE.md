@@ -82,6 +82,7 @@ core/pdf/                             PDF Page rendering (Android PdfRenderer, i
 core/ink/                             Shared stroke format; native ink canvas per platform
 feature/viewer/                       Home screen (Sheet list) and Page viewer: layout, page turns, zoom
 feature/annotation/                   Modes, toolbar, Symbols, Covers, Text boxes, layers, undo stack
+feature/settings/                     The Settings page, generated from each feature's declared Settings
 feature/metronome/                    Stub (Post-V1.0)
 scripts/                              Dev helper scripts, created when the first one is needed
 graphify-out/                         Generated knowledge graph, git-ignored

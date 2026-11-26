@@ -2,6 +2,11 @@
 
 Things to try on the Galaxy Tab S9+ that automated adb checks can't judge. Each issue adds its items when it's committed. Tick an item when it's checked; delete an issue's block once all its items are ticked. Report anything that fails, and it becomes a fix.
 
+## #5 Settings
+
+- [ ] The gear (top right of the home screen) and the Settings page look and read right
+- [ ] Set "Landscape turns advance" to One Page; a Sheet you never toggled then turns one Page at a time in landscape
+
 ## #4 Zoom, pan and rotation layout
 
 - [ ] Pinch zoom and one-finger pan feel smooth; the zoomed view turns sharp a moment after you stop

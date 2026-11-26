@@ -21,7 +21,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Covers | Not Started | — |
 | 1. Annotation editing | Text mode: Text boxes (italic/regular) and Links | Not Started | — |
 | 1. Annotation editing | Layers (Ink, Edit, Text) and visibility toggles | Not Started | — |
-| 1. Annotation editing | Settings page (feature-declared app-wide defaults) | Not Started | — |
+| 1. Annotation editing | Settings page (feature-declared app-wide defaults) | In Progress | Page, registry and Reading Setting done (#5); Ink, Edit, Text and Links Settings arrive with their features |
 | 1. Annotation editing | Undo/redo | Not Started | — |
 | 1. Annotation editing | Autosave | Not Started | — |
 | 1. Annotation editing | Sharps/flats/naturals with spacing adjustment | Post-V1.0 | Needs music data |

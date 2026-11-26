@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.violinsheet.core.data.sheetPdf
 import com.violinsheet.core.pdf.openPdf
+import com.violinsheet.feature.settings.SettingsScreen
 import com.violinsheet.feature.viewer.SheetListScreen
 import com.violinsheet.feature.viewer.SheetListViewModel
 import com.violinsheet.feature.viewer.SheetScreen
@@ -52,13 +53,17 @@ class MainActivity : ComponentActivity() {
                                 reattachId = it.id
                                 reattachPicker.launch(PDF_MIME_TYPES)
                             },
+                            onSettings = { nav.navigate("settings") },
                         )
+                    }
+                    composable("settings") {
+                        SettingsScreen(app.settingsRegistry, app.settingsStore, onBack = { nav.popBackStack() })
                     }
                     composable("sheet/{id}/{pdfFile}") { entry ->
                         val sheetId = entry.arguments?.getString("id")?.toLongOrNull() ?: 0
                         val pdfFile = entry.arguments?.getString("pdfFile").orEmpty()
                         // The list only opens Sheets whose PDF exists (a missing one shows the re-import prompt).
-                        val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile)), sheetId, app.sheetRepository) }
+                        val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile)), sheetId, app.sheetRepository, app.settingsStore) }
                         SheetScreen(viewModel)
                     }
                 }

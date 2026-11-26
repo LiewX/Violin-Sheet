@@ -15,4 +15,5 @@ include(
     ":feature:viewer",
     ":feature:annotation",
     ":feature:metronome",
+    ":feature:settings",
 )
