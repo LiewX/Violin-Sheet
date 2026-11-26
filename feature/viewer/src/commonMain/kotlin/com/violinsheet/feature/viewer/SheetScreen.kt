@@ -74,10 +74,21 @@ fun SheetScreen(
         val shown = shownPages(index, spread, viewModel.pageCount)
         val rects = remember(shown, viewport, sizes) { pageRects(viewport, shown.map { sizes[it] }) }
         val content = rects.reduce(Rect::union)
-        // A turn or a rotation starts at fit.
-        var zoom by remember(shown, viewport) { mutableStateOf(Zoom()) }
+        // Kept across turns (landing on the opposite side, see Zoom.afterTurn); a rotation starts at fit.
+        var zoom by remember(viewport) { mutableStateOf(Zoom()) }
+        var gestureStart by remember { mutableStateOf(zoom) }
         val gestures = object : SheetGestureHandler {
             override val zoomed get() = zoom.isZoomed
+            override val atLeftEdge get() = zoom.atLeftEdge(content)
+            override val atRightEdge get() = zoom.atRightEdge(viewport, content)
+
+            override fun beginGesture() {
+                gestureStart = zoom
+            }
+
+            override fun revertGesture() {
+                zoom = gestureStart
+            }
 
             override fun transform(centroid: Offset, pan: Offset, factor: Float) {
                 zoom = zoom.zoomedBy(factor, centroid, viewport, content).pannedBy(pan, viewport, content).first
@@ -89,7 +100,17 @@ fun SheetScreen(
                 return overscroll
             }
 
-            override fun turn(direction: Int) = viewModel.turn(direction, spread)
+            override fun turn(direction: Int) {
+                viewModel.turn(direction, spread)
+                val next = shownPages(viewModel.pageIndex.value, spread, viewModel.pageCount)
+                if (next == shown) return
+                // Laid out here, now, so the first frame of the new Pages is already in place.
+                val nextRects = pageRects(viewport, next.map { sizes[it] })
+                // Land on a Page that wasn't on screen: the first new one going forward, the last going back.
+                val fresh = next.indices.filter { next[it] !in shown }
+                val landing = nextRects[if (direction > 0) fresh.firstOrNull() ?: 0 else fresh.lastOrNull() ?: next.lastIndex]
+                zoom = zoom.afterTurn(direction, viewport, nextRects.reduce(Rect::union), landing)
+            }
         }
         // Clipped, so zoomed content never draws over the status bar or the surround.
         Box(Modifier.fillMaxSize().clipToBounds().sheetGestures(gestures)) {
@@ -112,10 +133,14 @@ fun SheetScreen(
             // full-screen Ink view) covers. No input handling, so touches and the pen pass through.
             val zoomLabel = if (zoom.isZoomed) ", zoomed ${(zoom.scale * 100).roundToInt()}%" else ""
             shown.forEachIndexed { slot, page ->
-                Box(
-                    Modifier.at(zoom.toScreen(rects[slot]))
-                        .semantics { contentDescription = "Page ${page + 1} of ${viewModel.pageCount}$zoomLabel" },
-                )
+                // Only the on-screen part: labels far larger than the window stop being refreshed while zoomed.
+                val visible = zoom.toScreen(rects[slot]).intersect(Rect(Offset.Zero, viewport))
+                if (visible.width > 0f && visible.height > 0f) {
+                    Box(
+                        Modifier.at(visible)
+                            .semantics { contentDescription = "Page ${page + 1} of ${viewModel.pageCount}$zoomLabel" },
+                    )
+                }
             }
         }
         Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)) { toolbar() }

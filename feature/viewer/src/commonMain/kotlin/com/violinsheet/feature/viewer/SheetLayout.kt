@@ -14,11 +14,17 @@ import kotlin.math.sign
 // over the whole spread (screen = fit * scale + offset). Ink (#6) maps Page coordinates through the same two steps,
 // so it stays aligned at every zoom and layout.
 
+/** Pixels of rounding allowed when checking whether the content is at an edge. */
+private const val EDGE_TOLERANCE = 0.5f
+
 /** Most a Page can be zoomed in, relative to fitting the screen. */
 private const val MAX_ZOOM = 5f
 
 /** Share of the width on each side where a tap turns the page. */
 private const val EDGE_FRACTION = 0.2f
+
+/** While zoomed, how far past the content's edge (as a share of the width) a swipe must go to turn the page. */
+private const val ZOOMED_SWIPE_FRACTION = 0.2f
 
 /**
  * Rects for [pages] (sizes in PDF points) laid out side by side at one scale, as large as fits in [viewport],
@@ -88,6 +94,22 @@ internal data class Zoom(val scale: Float = 1f, val offset: Offset = Offset.Zero
         return allowed to (wanted.offset - allowed.offset)
     }
 
+    /** The content's left edge is on screen: a swipe to the right can only turn the page from here. */
+    fun atLeftEdge(content: Rect): Boolean = offset.x >= -content.left * scale - EDGE_TOLERANCE
+
+    /** The content's right edge is on screen: a swipe to the left can only turn the page from here. */
+    fun atRightEdge(viewport: Size, content: Rect): Boolean = offset.x <= viewport.width - content.right * scale + EDGE_TOLERANCE
+
+    /**
+     * The view after turning [direction] (+1 forward, -1 back) to Pages laid out as [content]: same zoom and height,
+     * at the opposite side of [landing], the newly shown Page, so the reader lands where it starts (forward: its left
+     * edge) or where it ends (back: its right edge).
+     */
+    fun afterTurn(direction: Int, viewport: Size, content: Rect, landing: Rect): Zoom {
+        val x = if (direction > 0) 0f - landing.left * scale else viewport.width - landing.right * scale
+        return copy(offset = Offset(x, offset.y)).clamped(viewport, content)
+    }
+
     /** Keeps [content] (fit coordinates) covering the viewport where it is larger, centred where it is smaller. */
     fun clamped(viewport: Size, content: Rect): Zoom {
         fun axis(offset: Float, start: Float, end: Float, length: Float): Float {
@@ -109,7 +131,9 @@ internal data class Zoom(val scale: Float = 1f, val offset: Offset = Offset.Zero
  * Page turn for one finger gesture: +1 forward, -1 back, 0 none.
  * - A tap (finger travel [drag] under [tapSlop]) in the outer [EDGE_FRACTION] of [width] turns towards that side.
  * - Not zoomed, a horizontal swipe longer than [swipeDistance] turns.
- * - Zoomed, the swipe has to go that far past the content's edge ([overscroll]), since a plain swipe pans.
+ * - Zoomed, a swipe pans, so turning takes a deliberate one: it must start with the content already at that edge
+ *   ([leftEdgeAtStart] / [rightEdgeAtStart]) and go [ZOOMED_SWIPE_FRACTION] of the width past it ([overscroll]).
+ *   A pan that only reaches the edge on the way never turns.
  */
 internal fun pageTurnFor(
     start: Offset,
@@ -119,6 +143,8 @@ internal fun pageTurnFor(
     width: Float,
     swipeDistance: Float,
     tapSlop: Float,
+    leftEdgeAtStart: Boolean,
+    rightEdgeAtStart: Boolean,
 ): Int {
     if (drag.getDistance() <= tapSlop) {
         return when {
@@ -127,6 +153,12 @@ internal fun pageTurnFor(
             else -> 0
         }
     }
-    val swipe = if (zoomed) overscroll else drag
-    return if (abs(swipe.x) > swipeDistance && abs(swipe.x) > abs(swipe.y)) -sign(swipe.x).toInt() else 0
+    fun swipeOf(travel: Offset, distance: Float) =
+        if (abs(travel.x) > distance && abs(travel.x) > abs(travel.y)) -sign(travel.x).toInt() else 0
+    if (!zoomed) return swipeOf(drag, swipeDistance)
+    return when (swipeOf(overscroll, maxOf(swipeDistance, width * ZOOMED_SWIPE_FRACTION))) {
+        1 -> if (rightEdgeAtStart) 1 else 0
+        -1 -> if (leftEdgeAtStart) -1 else 0
+        else -> 0
+    }
 }

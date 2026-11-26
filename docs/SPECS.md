@@ -27,7 +27,7 @@ Mark up a Sheet with the pen. Printed-look edits should look like they were prin
 - Sheet records (name, file hash, per-Sheet choices), Annotations and Settings are covered by Android's built-in backup. Imported PDFs are not (the backup is capped at 25 MB per app). After a restore, a Sheet whose PDF is missing shows "PDF missing, re-import"; re-importing the same file, recognised by a hash of its contents, reattaches its Annotations. Re-importing from one Sheet's "PDF missing" prompt fixes that Sheet; a normal import from the home screen fixes every missing Sheet with that hash instead of creating a new Sheet.
 - Layout follows rotation: one Page in portrait, two Pages side by side in landscape. In landscape a turn advances two Pages; a per-Sheet "advance by one" toggle makes it advance one.
 - The next Page (or spread) is pre-rendered so page turns are instant.
-- The **pen** draws and edits. **Fingers** only navigate: swipe or tap the edge to turn the page, pinch to zoom, tap a Link to open it. When zoomed in, a swipe pans; an edge tap, or a swipe past the Page edge, turns the page.
+- The **pen** draws and edits. A hand resting on the screen while the pen is near is a palm and does nothing. **Fingers** only navigate: swipe or tap the edge to turn the page, pinch to zoom, tap a Link to open it. When zoomed in, a swipe pans; an edge tap, or a deliberate swipe past the Page edge (starting with the edge already on screen), turns the page. A turn keeps the zoom and its height on the Page and lands on the opposite side: the left edge going forward, the right edge going back. A rotation returns to fit.
 
 ### Modes
 

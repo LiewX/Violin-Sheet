@@ -88,6 +88,34 @@ class SheetLayoutTest {
         assertEquals(onScreen.bottomRight.y, placement.toScreen(Offset(a4.width, a4.height)).y, 0.01f)
     }
 
+    @Test fun forwardTurnKeepsZoomAndHeightAndLandsOnTheLeftEdge() {
+        val zoom = Zoom(scale = 2f, offset = Offset(-1000f, -300f)) // at the right edge, part way down
+        val turned = zoom.afterTurn(1, viewport, content, landing = content)
+        assertEquals(Zoom(scale = 2f, offset = Offset(0f, -300f)), turned)
+        assertTrue(turned.atLeftEdge(content))
+    }
+
+    @Test fun backTurnLandsOnTheRightEdge() {
+        val turned = Zoom(scale = 2f, offset = Offset(0f, -300f)).afterTurn(-1, viewport, content, landing = content)
+        assertEquals(Offset(-1000f, -300f), turned.offset)
+        assertTrue(turned.atRightEdge(viewport, content))
+    }
+
+    @Test fun advanceByOneLandsOnTheNewPageNotTheOneAlreadyRead() {
+        val (left, right) = pageRects(Size(1000f, 500f), listOf(Size(100f, 100f), Size(100f, 100f)))
+        val spread = left.union(right)
+        val forward = Zoom(scale = 2f).afterTurn(1, Size(1000f, 500f), spread, landing = right) // [3,4] -> [4,5]
+        assertEquals(0f - right.left * 2f, forward.offset.x) // the new right Page's left edge at the screen's left
+        val back = Zoom(scale = 2f).afterTurn(-1, Size(1000f, 500f), spread, landing = left) // [4,5] -> [3,4]
+        assertEquals(1000f - left.right * 2f, back.offset.x) // the new left Page's right edge at the screen's right
+    }
+
+    @Test fun edgesAreKnownOnlyWhenOnScreen() {
+        val middle = Zoom(scale = 2f, offset = Offset(-500f, 0f))
+        assertTrue(!middle.atLeftEdge(content) && !middle.atRightEdge(viewport, content))
+        assertTrue(Zoom().atLeftEdge(content) && Zoom().atRightEdge(viewport, content)) // at fit, both
+    }
+
     @Test fun contentSmallerThanScreenStaysCentred() {
         val narrow = Rect(250f, 0f, 750f, 1000f)
         val (panned, overscroll) = Zoom().pannedBy(Offset(100f, 0f), viewport, narrow)

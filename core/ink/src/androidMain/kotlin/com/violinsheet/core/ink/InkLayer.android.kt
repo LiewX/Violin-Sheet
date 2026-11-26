@@ -1,6 +1,5 @@
 package com.violinsheet.core.ink
 
-import android.annotation.SuppressLint
 import android.graphics.Matrix
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
@@ -16,6 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.InProgressStrokesFinishedListener
@@ -39,8 +45,6 @@ private fun PagePlacement.pageToScreen() = Matrix().apply {
     postTranslate(offset.x, offset.y)
 }
 
-private fun PagePlacement.screenToPage() = Matrix().also { pageToScreen().invert(it) }
-
 /** Rebuilds an Ink API stroke from the shared format, for drawing. */
 private fun InkStroke.toInkApi(): Stroke {
     val inputs = MutableStrokeInputBatch()
@@ -56,6 +60,15 @@ private fun Stroke.toInkStroke(pageIndex: Int): InkStroke {
         InkPoint(input.x, input.y, input.pressure, input.elapsedTimeMillis)
     }
     return InkStroke(Random.nextLong(), pageIndex, brush.colorIntArgb, brush.size, points)
+}
+
+/**
+ * Compose turns a cancelled gesture into an ordinary lift. The MotionEvent behind it tells them apart: a cancel, a
+ * pointer the system flagged as cancelled (palm rejection), or no event at all (Compose's own synthetic cancel).
+ */
+private fun PointerEvent.isCancel(): Boolean {
+    val event = motionEvent ?: return true
+    return event.actionMasked == MotionEvent.ACTION_CANCEL || event.flags and MotionEvent.FLAG_CANCELED != 0
 }
 
 @Composable
@@ -78,8 +91,87 @@ actual fun InkLayer(
     // Strokes handed to onStroke but still shown by the low-latency view, with their ids. Removed from the view only
     // once they are in [strokes] and drawn here, so a finished stroke never blinks out.
     val handedOver = remember { mutableMapOf<InProgressStrokeId, Long>() }
+    // The Page each wet stroke belongs to.
+    val pageOf = remember { mutableMapOf<InProgressStrokeId, Int>() }
 
-    Box(modifier) {
+    val hostView = LocalView.current
+
+    // Pen input goes through Compose rather than a View touch listener: Compose sees every pointer on its own, so the
+    // pen draws even inside a gesture a resting palm started (navigation's palm guard deals with the palm itself).
+    val penInput = Modifier.pointerInput(Unit) {
+        awaitPointerEventScope {
+            var stroke: InProgressStrokeId? = null
+            var penPointer: PointerId? = null
+            var placement: PagePlacement? = null
+            var startMillis = 0L
+            fun input(change: PointerInputChange, position: Offset, atMillis: Long): StrokeInput {
+                val page = placement!!.toPage(position)
+                return StrokeInput.create(page.x, page.y, atMillis - startMillis, InputToolType.STYLUS, pressure = change.pressure)
+            }
+            try {
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val strokesView = view ?: continue
+                    for (change in event.changes) {
+                        if (change.type != PointerType.Stylus) continue
+                        val current = stroke
+                        when {
+                            change.pressed && !change.previousPressed -> {
+                                // A stroke still open means its lift was lost: drop it rather than block the pen.
+                                current?.let {
+                                    strokesView.cancelStroke(it)
+                                    pageOf.remove(it)
+                                    stroke = null
+                                }
+                                // shortcut: the side button just doesn't draw for now; #8 makes holding it erase.
+                                if (event.buttons.isSecondaryPressed) continue
+                                // The stroke belongs to the Page the pen starts on, in that Page's coordinates.
+                                val page = currentPlacements.firstOrNull { it.screenRect.contains(change.position) } ?: continue
+                                placement = page
+                                startMillis = change.uptimeMillis
+                                penPointer = change.id
+                                // This stroke's events as they come, not batched per frame (Ink API advice).
+                                event.motionEvent?.let(hostView::requestUnbufferedDispatch)
+                                val chosen = currentPen
+                                stroke = strokesView.startStroke(
+                                    input(change, change.position, change.uptimeMillis),
+                                    brush(chosen.colour, chosen.size),
+                                    page.pageToScreen(),
+                                ).also { pageOf[it] = page.pageIndex }
+                                change.consume()
+                            }
+                            current != null && change.id == penPointer && change.pressed -> {
+                                val batch = MutableStrokeInputBatch()
+                                for (h in change.historical) batch.add(input(change, h.position, h.uptimeMillis))
+                                batch.add(input(change, change.position, change.uptimeMillis))
+                                strokesView.addToStroke(batch, current)
+                                change.consume()
+                            }
+                            current != null && change.id == penPointer -> {
+                                if (event.isCancel()) {
+                                    // Palm rejection or a system gesture took the pen: drop the stroke, no stray mark.
+                                    strokesView.cancelStroke(current)
+                                    pageOf.remove(current)
+                                } else {
+                                    strokesView.finishStroke(input(change, change.position, change.uptimeMillis), current)
+                                }
+                                stroke = null
+                                change.consume()
+                            }
+                        }
+                    }
+                }
+            } finally {
+                // Leaving the screen mid-stroke: drop the unfinished stroke rather than keep half of it.
+                stroke?.let {
+                    view?.cancelStroke(it)
+                    pageOf.remove(it)
+                }
+            }
+        }
+    }
+
+    Box(modifier.then(penInput)) {
         Canvas(Modifier.fillMaxSize()) {
             drawIntoCanvas { canvas ->
                 for (placement in placements) {
@@ -100,11 +192,11 @@ actual fun InkLayer(
                 view?.post { view?.removeFinishedStrokes(drawnNow) }
             }
         }
+        // Renders wet strokes only. It handles no touches, so every pointer reaches the Compose handlers.
         AndroidView(
             factory = { context ->
                 InProgressStrokesView(context).apply {
                     eagerInit()
-                    val pageOf = mutableMapOf<InProgressStrokeId, Int>()
                     addFinishedStrokesListener(
                         object : InProgressStrokesFinishedListener {
                             override fun onStrokesFinished(strokes: Map<InProgressStrokeId, Stroke>) {
@@ -121,57 +213,10 @@ actual fun InkLayer(
                             }
                         },
                     )
-                    setOnTouchListener(PenInput(this, { currentPlacements }, { currentPen }, pageOf))
                     view = this
                 }
             },
             modifier = Modifier.fillMaxSize(),
         )
-    }
-}
-
-/** Feeds pen input to the low-latency view. Fingers are refused, so they reach page navigation underneath. */
-private class PenInput(
-    private val view: InProgressStrokesView,
-    private val placements: () -> List<PagePlacement>,
-    private val pen: () -> Pen,
-    private val pageOf: MutableMap<InProgressStrokeId, Int>,
-) : android.view.View.OnTouchListener {
-    private var stroke: InProgressStrokeId? = null
-    private var pointerId = MotionEvent.INVALID_POINTER_ID
-
-    @SuppressLint("ClickableViewAccessibility") // ink input, not a click
-    override fun onTouch(v: android.view.View, event: MotionEvent): Boolean {
-        when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                if (event.getToolType(0) != MotionEvent.TOOL_TYPE_STYLUS) return false
-                // shortcut: the side button just doesn't draw for now; #8 makes holding it erase.
-                if (event.isButtonPressed(MotionEvent.BUTTON_STYLUS_PRIMARY)) return true
-                stroke?.let { view.cancelStroke(it, event) } // a stroke left open by a lost UP
-
-                // The stroke belongs to the Page the pen starts on, in that Page's coordinates.
-                val placement = placements().firstOrNull { it.screenRect.contains(Offset(event.x, event.y)) } ?: return false
-                v.requestUnbufferedDispatch(event)
-                pointerId = event.getPointerId(0)
-                val current = pen()
-                stroke = view.startStroke(event, pointerId, brush(current.colour, current.size), placement.screenToPage(), Matrix())
-                    .also { pageOf[it] = placement.pageIndex }
-            }
-            MotionEvent.ACTION_MOVE -> stroke?.let { view.addToStroke(event, pointerId, it, null) }
-            MotionEvent.ACTION_POINTER_UP -> if (event.getPointerId(event.actionIndex) == pointerId) finish(event)
-            MotionEvent.ACTION_UP -> finish(event)
-            // Palm rejection or the system took the gesture: drop the stroke.
-            MotionEvent.ACTION_CANCEL -> stroke?.let {
-                view.cancelStroke(it, event)
-                pageOf.remove(it)
-                stroke = null
-            }
-        }
-        return true
-    }
-
-    private fun finish(event: MotionEvent) {
-        stroke?.let { view.finishStroke(event, pointerId, it) }
-        stroke = null
     }
 }

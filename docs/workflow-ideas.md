@@ -39,4 +39,11 @@ Status: **open**, **done** or **dropped**.
 | # | Problem | Fix | Status |
 |---|---|---|---|
 | 16 | Ink strokes drew at the wrong place at first: `CanvasStrokeRenderer.draw` takes the transform only as a hint, and the canvas has to be moved by the caller. Found only on the device. | Read the KDoc of a new library's main calls before using them, not just the signatures from `javap`. A screenshot check right after the first draw caught it quickly; keep doing that. | open |
-| 17 | A full-screen Android view (the Ink layer) hid the Compose nodes beneath it from accessibility, and after that Compose stopped refreshing those nodes when zooming. About 20 minutes were lost probing it through throwaway device tests. | Check behaviour in device tests (did it turn, did it draw), not accessibility bounds. Label Pages from above any interop view. Time-box probing a platform quirk to about 10 minutes, then work around it and log it here. | open |
+| 17 | A full-screen Android view (the Ink layer) hid the Compose nodes beneath it from accessibility, and after that Compose stopped refreshing those nodes when zooming. About 20 minutes were lost probing it through throwaway device tests. | Check behaviour in device tests (did it turn, did it draw), not accessibility bounds. Label Pages from above any interop view. Time-box probing a platform quirk to about 10 minutes, then work around it and log it here. | done: labels were frozen because they were far larger than the window; clipping them to the screen fixed it, and the direct zoom check is back |
+
+## 2026-11-26: fixes after the manual check
+
+| # | Problem | Fix | Status |
+|---|---|---|---|
+| 18 | Palm rejection broke in real use, though every adb check passed: adb can't rest a palm and hold a pen at the same time, and the first design (a View touch listener for the pen) only failed in that case. | For input features, list in the plan the multi-pointer cases adb can't simulate (palm then pen, pen then finger), and design for them explicitly. Put them first in `docs/manual-checks.md`. | open |
+| 19 | The Bash heredoc failure (idea 10) happened twice more this session, after it was logged. | Idea 10's fix applies to Python edit scripts too: write the script with the Write tool, then run `python -I <file>`. | open |

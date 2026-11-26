@@ -43,9 +43,8 @@ class SheetGesturesDeviceTest {
     @Test
     fun pinchZoomsSwipePansAndSwipePastEdgeTurns() {
         page(1).pinchOpen(0.7f)
-        device.waitForIdle()
-        // No direct zoom check: Compose doesn't refresh the accessibility tree after a zoom (bounds and labels stay
-        // as at fit). Zoom shows in behaviour instead: below, a swipe that would turn the page at fit only pans.
+        // The Page's label carries the zoom level ("Page 1 of 5, zoomed 250%").
+        assertNotNull("pinch didn't zoom", device.wait(Until.findObject(By.descContains("zoomed")), 2_000))
         // For checking by eye that the zoomed view turns sharp: adb pull /sdcard/Android/data/com.violinsheet/files/zoomed.png
         Thread.sleep(1_000)
         device.takeScreenshot(File(instrumentation.targetContext.getExternalFilesDir(null), "zoomed.png"))
