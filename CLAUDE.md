@@ -47,7 +47,7 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
 
 - **Read build output** with `--console=plain 2>&1 | grep -vE "^> Task|^\[=|^$"`. It drops the task lines but keeps every warning and error. Don't pipe Gradle into `head`, which cuts off the error.
 - **adb from Git Bash:** prefix commands with `MSYS_NO_PATHCONV=1`, or Git Bash rewrites device paths (`/sdcard/...` becomes `C:/Program Files/Git/sdcard/...`). Pass local files as Windows paths (`C:/...`).
-- **Device checks** (debug build):
+- **Device checks:** `source scripts/device.sh` gives `install_app`, `launch`, `tap_text <label regex>`, `has_text`, `db <sql>` and `crashes`. Snackbar text doesn't show in uiautomator dumps, so check messages with a screenshot. The raw commands (debug build):
   - Launch: `adb shell am start -n com.violinsheet/com.violinsheet.android.MainActivity`
   - Screenshot: `adb exec-out screencap -p > shot.png`
   - Crashes: `adb logcat -d -b crash`

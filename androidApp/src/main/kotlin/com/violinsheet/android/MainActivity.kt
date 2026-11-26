@@ -7,6 +7,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,6 +22,8 @@ import com.violinsheet.feature.viewer.SheetListViewModel
 import com.violinsheet.feature.viewer.SheetScreen
 import com.violinsheet.feature.viewer.SheetViewModel
 
+private val PDF_MIME_TYPES = arrayOf("application/pdf")
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,19 +34,29 @@ class MainActivity : ComponentActivity() {
                 NavHost(nav, startDestination = "sheets") {
                     composable("sheets") {
                         val viewModel = viewModel { SheetListViewModel(app.sheetRepository) }
-                        val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-                            if (uri != null) viewModel.runImport { app.sheetImporter.import(uri) }
+                        val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                            if (uri != null) viewModel.import { app.sheetImporter.import(uri) }
+                        }
+                        // Saved, because Android can recreate the activity (or the process) while the picker is open.
+                        var reattachId by rememberSaveable { mutableStateOf<Long?>(null) }
+                        val reattachPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                            val sheetId = reattachId
+                            reattachId = null
+                            if (uri != null && sheetId != null) viewModel.reattach { app.sheetImporter.reattach(sheetId, uri) }
                         }
                         SheetListScreen(
                             viewModel,
-                            onImport = { picker.launch(arrayOf("application/pdf")) },
+                            onImport = { importPicker.launch(PDF_MIME_TYPES) },
                             onOpen = { nav.navigate("sheet/${Uri.encode(it.pdfFile)}") },
+                            onReattach = {
+                                reattachId = it.id
+                                reattachPicker.launch(PDF_MIME_TYPES)
+                            },
                         )
                     }
                     composable("sheet/{pdfFile}") { entry ->
                         val pdfFile = entry.arguments?.getString("pdfFile").orEmpty()
-                        // shortcut: a missing PDF (after a restore) crashes here; #3 adds "PDF missing, re-import".
-                        // Imports are checked with openPdf, so other open failures shouldn't happen.
+                        // The list only opens Sheets whose PDF exists (a missing one shows the re-import prompt).
                         val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile))) }
                         SheetScreen(viewModel)
                     }

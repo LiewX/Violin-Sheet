@@ -17,3 +17,12 @@ Status: **open**, **done** or **dropped**.
 | 7 | Choosing plugin and library versions needed about 6 `curl` calls to Maven metadata, plus a guess about AGP 9 compatibility. | Keep all versions in `gradle/libs.versions.toml` (done). When bumping, check one compatibility table first (Kotlin ↔ KSP ↔ Compose Multiplatform ↔ AGP), and record the chosen set in the commit message. | done |
 | 8 | The graphify rule ("query the graph before any grep or read") had nothing to work on in an empty repo, and its graph is git-ignored, so it's local only. | Leave the rule as is: it now has code to index. Revisit if graph queries keep missing files that a grep would find. | dropped: no change needed |
 | 9 | I committed #1 without a review. The review afterwards found a case-sensitive name clash and a missing test of the repository path, so the fixes needed a second commit. | Review before committing an issue (`CLAUDE.md` → Working Style). | done |
+
+## 2026-11-26: #2 and #3
+
+| # | Problem | Fix | Status |
+|---|---|---|---|
+| 10 | Two long Bash scripts that wrote several files through heredocs failed to parse ("unexpected EOF while looking for matching `'`"), so nothing ran and the work had to be redone. | Write each new source file with the Write tool. Keep Bash for running commands and short single-file edits. | open |
+| 11 | uiautomator dumps don't include snackbar text, so two message checks came back empty although the messages showed. | Check snackbar messages with `screencap` and look at the image (noted in `CLAUDE.md` → Build & run). | done |
+| 12 | Driving a text field over adb took three tries: keys sent before the field had focus went nowhere, and ctrl+A didn't select. | Tap the field first, then send `KEYCODE_MOVE_END` plus enough `KEYCODE_DEL`s. Add a `type_into <field> <text>` helper to `scripts/device.sh` if this comes up again. | open |
+| 13 | Each uiautomator dump over adb takes about 2 seconds, so a timed check (Undo within 10 s) ran out of time, and a tap at a remembered position hit the wrong row after the list changed (Back then closed the app). | For timed checks, read every position before the action and tap by coordinates without dumping in between. After the list changes, read positions again. | open |

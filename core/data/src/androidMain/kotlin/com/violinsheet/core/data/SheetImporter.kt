@@ -16,9 +16,21 @@ import java.util.UUID
 // noBackupFilesDir: Android's backup is capped at 25 MB per app, so PDFs stay out of it (SPECS: Sheets and reading).
 fun sheetPdf(context: Context, pdfFile: String): File = File(File(context.noBackupFilesDir, "sheets"), pdfFile)
 
-/** Copies a picked PDF into app storage and adds it as a Sheet. The copy is never modified (ADR 0001). */
+/** Copies a picked PDF into app storage for a Sheet. The copy is never modified (ADR 0001). */
 class SheetImporter(private val context: Context, private val repository: SheetRepository) {
-    suspend fun import(uri: Uri): Sheet = withContext(Dispatchers.IO) {
+    /** Home-screen import: a new Sheet, or reattaches Sheets missing this PDF. */
+    suspend fun import(uri: Uri): ImportResult =
+        withCopy(uri) { fileName, hash, pdfFile -> repository.import(fileName, hash, pdfFile) }
+
+    /** Re-import from a Sheet's "PDF missing" prompt. Throws [SheetException] if it is a different file. */
+    suspend fun reattach(sheetId: Long, uri: Uri): Sheet =
+        withCopy(uri) { _, hash, pdfFile -> repository.reattach(sheetId, hash, pdfFile) }
+
+    /** Copies and checks the picked file, then hands it to [use]. The copy is deleted if anything fails. */
+    private suspend fun <T> withCopy(
+        uri: Uri,
+        use: suspend (fileName: String, fileHash: String, pdfFile: String) -> T,
+    ): T = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
         val fileName = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
             ?.use { if (it.moveToFirst()) it.getString(0) else null }
@@ -35,8 +47,7 @@ class SheetImporter(private val context: Context, private val repository: SheetR
                 throw IOException("$fileName is not a readable PDF", e)
             }
             if (pageCount == 0) throw IOException("$fileName has no pages")
-            val hash = digest.digest().joinToString("") { "%02x".format(it) }
-            repository.add(fileName, hash, target.name)
+            use(fileName, digest.digest().joinToString("") { "%02x".format(it) }, target.name)
         } catch (e: Throwable) {
             target.delete()
             throw e

@@ -2,6 +2,12 @@
 
 Things to try on the Galaxy Tab S9+ that automated adb checks can't judge. Each issue adds its items when it's committed. Tick an item when it's checked; delete an issue's block once all its items are ticked. Report anything that fails, and it becomes a fix.
 
+## #3 Manage Sheets
+
+- [ ] Rename and delete from the ⋮ menu feel right, and the Undo bar is easy to hit in its 10 seconds
+- [ ] Decide if this is fine: deleting a second Sheet within 10 seconds replaces the first one's Undo bar, so the first can't be undone any more (Gmail works the same way)
+- [ ] Real backup and restore, if you're willing: Settings → Google → Backup → Back up now, then uninstall and reinstall the app. Sheets come back marked "PDF missing, re-import", and re-importing a PDF fixes them. (adb only simulated this by deleting the PDF files.)
+
 ## #2 Read a Sheet (checked 2026-11-26)
 
 - [x] Open a Sheet; swipe and edge-tap with a finger to turn pages

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backed up: Sheet records, Annotations and Settings (database, shared preferences, files).
+     Not backed up: imported PDFs. They live in no_backup/, which Android never backs up, because
+     the cloud backup is capped at 25 MB per app (SPECS: Sheets and reading). -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="." />
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="." />
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="." />
+    </device-transfer>
+</data-extraction-rules>

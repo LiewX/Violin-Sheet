@@ -11,4 +11,6 @@ data class Sheet(
     val fileHash: String,
     /** File name of the PDF copy in app storage. Only the name, so the storage folder can move. */
     val pdfFile: String,
+    /** When the user deleted it (epoch ms). Hidden from the list, and purged once the Undo bar has expired. */
+    val deletedAt: Long? = null,
 )
