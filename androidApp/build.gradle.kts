@@ -25,5 +25,6 @@ dependencies {
     implementation(project(":feature:viewer"))
     implementation(compose.material3)
     implementation(libs.activity.compose)
+    implementation(libs.navigation.compose)
     implementation(libs.lifecycle.viewmodel.compose)
 }

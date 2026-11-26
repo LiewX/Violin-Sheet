@@ -10,6 +10,9 @@ kotlin {
             api(libs.room.runtime)
             api(libs.kotlinx.coroutines.core)
         }
+        androidMain.dependencies {
+            implementation(project(":core:pdf"))
+        }
         commonTest.dependencies {
             implementation(libs.kotlinx.coroutines.test)
         }

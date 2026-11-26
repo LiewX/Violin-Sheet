@@ -14,6 +14,7 @@ room = "2.8.4"
 coroutines = "1.10.2"
 lifecycle = "2.9.6"
 activity-compose = "1.11.0"
+navigation = "2.9.8"
 
 [libraries]
 # Gradle plugins, put on the classpath by buildSrc so every module applies them by id.
@@ -29,4 +30,5 @@ room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }

@@ -1,5 +1,6 @@
 package com.violinsheet.feature.viewer
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,10 +19,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.violinsheet.core.data.Sheet
 
 /** Home screen: the flat list of Sheets. */
 @Composable
-fun SheetListScreen(viewModel: SheetListViewModel, onImport: () -> Unit) {
+fun SheetListScreen(viewModel: SheetListViewModel, onImport: () -> Unit, onOpen: (Sheet) -> Unit) {
     val sheets by viewModel.sheets.collectAsState()
     val message by viewModel.message.collectAsState()
     val snackbar = remember { SnackbarHostState() }
@@ -43,7 +45,9 @@ fun SheetListScreen(viewModel: SheetListViewModel, onImport: () -> Unit) {
             }
         } else {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
-                items(sheets, key = { it.id }) { ListItem(headlineContent = { Text(it.name) }) }
+                items(sheets, key = { it.id }) { sheet ->
+                    ListItem(headlineContent = { Text(sheet.name) }, modifier = Modifier.clickable { onOpen(sheet) })
+                }
             }
         }
     }
