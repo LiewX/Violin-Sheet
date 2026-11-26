@@ -46,7 +46,8 @@ Freehand Ink, kept as drawn.
 
 - Sizes are measured on the Page, not the screen, so a stroke keeps its thickness relative to the notes at any zoom.
 - **Holding the S Pen side button** erases while held; releasing it returns to the previous tool. On iPad the trigger is decided at the port (the Apple Pencil has no side button).
-- The custom colour picker opens in a panel above the toolbar, never a dialog.
+- The custom colour picker opens in a panel above the toolbar, never a dialog. One button at the end of the toolbar opens and closes the panel; it stays open while drawing, and switching tool shows that tool's controls in it. The panel holds the picker (a saturation/brightness square and a hue strip) and the size slider; for the eraser, only the slider.
+- A custom highlighter colour keeps the highlighter's translucency: the picker sets the hue, not the opacity.
 
 **Lasso:** circle strokes with the pen; a stroke is selected if most of it is inside the lasso. The selection can be:
 
@@ -104,9 +105,9 @@ Typed, printed-look text in Text boxes.
 
 ### Settings
 
-A full page opened from a gear icon on the home screen. It holds app-wide Settings: the defaults every Sheet starts with. A change in a Sheet's toolbar lasts only while that Sheet is open, and per-Sheet choices (layer toggles, "advance by one", Symbol scale slider) stay in the Sheet.
+A full page opened from a gear icon on the home screen. It holds app-wide Settings: the defaults every Sheet starts with. A change in a Sheet's toolbar lasts only while that Sheet is open, and per-Sheet choices (layer toggles, "advance by one", Symbol scale slider) stay in the Sheet. The eraser has no Setting: its last mode and size carry over to the next Sheet while the app runs.
 
-- Each feature declares its own Settings (name, type, default). The page is built from those declarations, grouped by feature, and the type picks the control (toggle, slider, choice, colour).
+- Each feature declares its own Settings (name, type, default). The page is built from those declarations, grouped by feature, and the type picks the control (toggle, slider, choice, colour). A colour control shows its presets and the same custom colour picker as the toolbar.
 - Changes are saved instantly and covered by Android backup. There is no user-editable config file.
 - V1.0 Settings:
   - **Reading:** landscape turns advance two Pages or one.

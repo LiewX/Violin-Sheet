@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +39,10 @@ import androidx.compose.ui.unit.dp
 import com.violinsheet.core.ink.DrawTool
 import com.violinsheet.core.ink.EraseMode
 import com.violinsheet.core.ink.Eraser
+import com.violinsheet.feature.settings.ColourPicker
+import com.violinsheet.feature.settings.CustomColourBrush
+import com.violinsheet.feature.settings.StepSlider
+import com.violinsheet.feature.settings.formatPoints
 
 /** What the toolbar's Undo and Redo buttons do, and whether each has anything to do. */
 class UndoControls(val canUndo: Boolean, val canRedo: Boolean, val onUndo: () -> Unit, val onRedo: () -> Unit)
@@ -44,35 +53,71 @@ class UndoControls(val canUndo: Boolean, val canRedo: Boolean, val onUndo: () ->
  */
 @Composable
 fun InkToolbar(tools: InkTools, onTools: (InkTools) -> Unit, undo: UndoControls, saveFailed: Boolean = false) {
-    Surface(shape = RoundedCornerShape(24.dp), tonalElevation = 3.dp, shadowElevation = 3.dp) {
-        Row(
-            Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = undo.onUndo, enabled = undo.canUndo, modifier = Modifier.size(40.dp)) {
-                Icon(UndoArrow, contentDescription = "Undo")
-            }
-            IconButton(onClick = undo.onRedo, enabled = undo.canRedo, modifier = Modifier.size(40.dp)) {
-                // Redo's arrow is Undo's, mirrored.
-                Icon(UndoArrow, contentDescription = "Redo", modifier = Modifier.graphicsLayer(scaleX = -1f))
-            }
-            ToolbarDivider()
-            if (saveFailed) Text("Last change not saved", color = MaterialTheme.colorScheme.error)
-            ToolChoice.entries.forEach { choice ->
-                Choice(selected = tools.chosen == choice, label = choice.name, onClick = { onTools(tools.copy(chosen = choice)) }) {
-                    Icon(toolIcon(choice), contentDescription = null)
+    var panelOpen by remember { mutableStateOf(false) }
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (panelOpen) ToolPanel(tools, onTools)
+        Surface(shape = RoundedCornerShape(24.dp), tonalElevation = 3.dp, shadowElevation = 3.dp) {
+            Row(
+                Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = undo.onUndo, enabled = undo.canUndo, modifier = Modifier.size(40.dp)) {
+                    Icon(UndoArrow, contentDescription = "Undo")
                 }
-            }
-            ToolbarDivider()
-            when (tools.chosen) {
-                ToolChoice.Pen -> DrawPresets(tools.pen, "pen", PEN_COLOURS, PEN_SIZES) { onTools(tools.copy(pen = it)) }
-                ToolChoice.Highlighter ->
-                    DrawPresets(tools.highlighter, "highlighter", HIGHLIGHTER_COLOURS, HIGHLIGHTER_SIZES) { onTools(tools.copy(highlighter = it)) }
-                ToolChoice.Eraser -> EraserPresets(tools.eraser) { onTools(tools.copy(eraser = it)) }
+                IconButton(onClick = undo.onRedo, enabled = undo.canRedo, modifier = Modifier.size(40.dp)) {
+                    // Redo's arrow is Undo's, mirrored.
+                    Icon(UndoArrow, contentDescription = "Redo", modifier = Modifier.graphicsLayer(scaleX = -1f))
+                }
+                ToolbarDivider()
+                if (saveFailed) Text("Last change not saved", color = MaterialTheme.colorScheme.error)
+                ToolChoice.entries.forEach { choice ->
+                    Choice(selected = tools.chosen == choice, label = choice.name, onClick = { onTools(tools.copy(chosen = choice)) }) {
+                        Icon(toolIcon(choice), contentDescription = null)
+                    }
+                }
+                ToolbarDivider()
+                val openPanel = { panelOpen = true }
+                when (tools.chosen) {
+                    ToolChoice.Pen -> DrawPresets(tools.pen, "pen", PEN_COLOURS, PEN_SIZES, openPanel) { onTools(tools.copy(pen = it)) }
+                    ToolChoice.Highlighter ->
+                        DrawPresets(tools.highlighter, "highlighter", HIGHLIGHTER_COLOURS, HIGHLIGHTER_SIZES, openPanel) { onTools(tools.copy(highlighter = it)) }
+                    ToolChoice.Eraser -> EraserPresets(tools.eraser) { onTools(tools.copy(eraser = it)) }
+                }
+                ToolbarDivider()
+                Choice(selected = panelOpen, label = "Colour and size", onClick = { panelOpen = !panelOpen }) {
+                    Icon(TuneIcon, contentDescription = null)
+                }
             }
         }
     }
+}
+
+/** The panel above the toolbar: the chosen tool's colour picker (pen, highlighter) and size slider. */
+@Composable
+private fun ToolPanel(tools: InkTools, onTools: (InkTools) -> Unit) {
+    Surface(shape = RoundedCornerShape(24.dp), tonalElevation = 3.dp, shadowElevation = 3.dp) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            when (tools.chosen) {
+                ToolChoice.Pen -> DrawPanel(tools.pen, InkSettings.penSize.range, InkSettings.penSize.step) { onTools(tools.copy(pen = it)) }
+                ToolChoice.Highlighter ->
+                    DrawPanel(tools.highlighter, InkSettings.highlighterSize.range, InkSettings.highlighterSize.step) { onTools(tools.copy(highlighter = it)) }
+                ToolChoice.Eraser -> SizeSlider(tools.eraser.size, ERASER_SIZE_RANGE, ERASER_SIZE_STEP) { onTools(tools.copy(eraser = tools.eraser.copy(size = it))) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawPanel(tool: DrawTool, range: ClosedFloatingPointRange<Float>, step: Float, onTool: (DrawTool) -> Unit) {
+    ColourPicker(tool.colour, { onTool(tool.copy(colour = it)) })
+    SizeSlider(tool.size, range, step) { onTool(tool.copy(size = it)) }
+}
+
+@Composable
+private fun SizeSlider(size: Float, range: ClosedFloatingPointRange<Float>, step: Float, onSize: (Float) -> Unit) {
+    Text("Size: ${formatPoints(size)} pt", style = MaterialTheme.typography.bodyMedium)
+    StepSlider(size, range, step, onSize, Modifier.width(320.dp).semantics { contentDescription = "Size" })
 }
 
 /** Dot sizes for the small, medium and large preset, so the presets read at a glance whatever their sizes. */
@@ -81,16 +126,22 @@ private val PRESET_DOTS = listOf(8.dp, 14.dp, 22.dp)
 private fun presetDot(i: Int) = PRESET_DOTS.getOrElse(i) { PRESET_DOTS.last() }
 
 @Composable
-private fun DrawPresets(tool: DrawTool, name: String, colours: List<NamedColour>, sizes: List<Float>, onTool: (DrawTool) -> Unit) {
+private fun DrawPresets(tool: DrawTool, name: String, colours: List<NamedColour>, sizes: List<Float>, openPanel: () -> Unit, onTool: (DrawTool) -> Unit) {
     colours.forEach { (colourName, colour) ->
         Choice(selected = tool.colour == colour, label = "$colourName $name", onClick = { onTool(tool.copy(colour = colour)) }) {
             Box(Modifier.size(24.dp).clip(CircleShape).background(Color(colour)))
         }
     }
+    // The custom colour: shown and selected when the colour isn't a preset, else a rainbow ring. Opens the panel.
+    val custom = colours.none { it.argb == tool.colour }
+    Choice(selected = custom, label = "Custom $name colour", onClick = openPanel) {
+        val fill = if (custom) SolidColor(Color(tool.colour)) else CustomColourBrush
+        Box(Modifier.size(24.dp).clip(CircleShape).background(fill))
+    }
     ToolbarDivider()
     val title = name.replaceFirstChar { it.uppercase() }
     sizes.forEachIndexed { i, size ->
-        Choice(selected = tool.size == size, label = "$title size ${size.label()} pt", onClick = { onTool(tool.copy(size = size)) }) {
+        Choice(selected = tool.size == size, label = "$title size ${formatPoints(size)} pt", onClick = { onTool(tool.copy(size = size)) }) {
             Box(Modifier.size(presetDot(i)).clip(CircleShape).background(Color(tool.colour)))
         }
     }
@@ -99,7 +150,7 @@ private fun DrawPresets(tool: DrawTool, name: String, colours: List<NamedColour>
 @Composable
 private fun EraserPresets(eraser: Eraser, onEraser: (Eraser) -> Unit) {
     ERASER_SIZES.forEachIndexed { i, size ->
-        Choice(selected = eraser.size == size, label = "Eraser size ${size.label()} pt", onClick = { onEraser(eraser.copy(size = size)) }) {
+        Choice(selected = eraser.size == size, label = "Eraser size ${formatPoints(size)} pt", onClick = { onEraser(eraser.copy(size = size)) }) {
             Box(Modifier.size(presetDot(i)).border(1.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape))
         }
     }
@@ -118,11 +169,14 @@ private fun EraserPresets(eraser: Eraser, onEraser: (Eraser) -> Unit) {
     }
 }
 
-/** 0.75 → "0.75", 12.0 → "12". */
-private fun Float.label() = if (this % 1f == 0f) toInt().toString() else toString()
-
 @Composable
 private fun ToolbarDivider() = VerticalDivider(Modifier.padding(horizontal = 4.dp).size(width = 1.dp, height = 28.dp))
+
+// The Material "tune" sliders.
+private val TuneIcon = icon(
+    "Tune",
+    "M3,17v2h6v-2L3,17zM3,5v2h10L13,5L3,5zM13,21v-2h8v-2h-8v-2h-2v6h2zM7,9v2L3,11v2h4v2h2L9,9L7,9zM21,13v-2L11,11v2h10zM15,9h2L17,7h4L21,5h-4L17,3h-2v6z",
+)
 
 // The Material "undo" arrow. Built here because material-icons-core has none, and material-icons-extended is large.
 private val UndoArrow = ImageVector.Builder("Undo", 24.dp, 24.dp, 24f, 24f).addPath(

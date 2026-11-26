@@ -8,9 +8,9 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | Setup | Project skeleton (Kotlin Multiplatform modules, Compose Multiplatform, Room storage — ADR 0003) | Done | #1 verified on the Galaxy Tab S9+ 2026-11-26. Android Ink API 1.0 added in #6 |
 | 1. Annotation editing | Sheet import and list (rename, delete with undo bar, backup without PDFs + hash reattach) | Done | #1, #3. A real Google backup/restore is only simulated (PDF files deleted); see `docs/manual-checks.md` |
 | 1. Annotation editing | PDF Page rendering, zoom/pan, page turns, 1-up/2-up layout | Done | #2, #4 |
-| 1. Annotation editing | Ink mode: pen, highlighter, eraser, side-button erase | Done | #6, #8. Workflow reworked for token use after #8 (workflow idea 27); next issue #9, measured against #8 |
+| 1. Annotation editing | Ink mode: pen, highlighter, eraser, side-button erase | Done | #6, #8 |
 | 1. Annotation editing | Ink lasso: move, resize, rotate, copy/paste within a Sheet, delete | Not Started | — |
-| 1. Annotation editing | Colour picker and size sliders | Not Started | — |
+| 1. Annotation editing | Colour picker and size sliders | Done | #9: HSV picker and size sliders in a panel above the toolbar; the same picker on the Settings page. Token use to compare with #8 at the next cleanup |
 | 1. Annotation editing | Symbols: fingerings | Not Started | — |
 | 1. Annotation editing | Symbols: articulations | Not Started | — |
 | 1. Annotation editing | Symbols: bowings | Not Started | — |

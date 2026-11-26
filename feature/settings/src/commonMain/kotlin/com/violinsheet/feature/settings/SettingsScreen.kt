@@ -6,19 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Slider
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,16 +26,24 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.violinsheet.core.data.settings.ChoiceSetting
 import com.violinsheet.core.data.settings.ColourSetting
-import com.violinsheet.core.data.settings.SliderSetting
 import com.violinsheet.core.data.settings.SettingsRegistry
 import com.violinsheet.core.data.settings.SettingsStore
+import com.violinsheet.core.data.settings.SliderSetting
 
 /** The Settings page, built from the declarations in [registry]: one section per feature, one control per Setting. */
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBar
@@ -100,6 +102,12 @@ private fun ChoiceRow(setting: ChoiceSetting, store: SettingsStore) {
 @Composable
 private fun ColourRow(setting: ColourSetting, store: SettingsStore) {
     val value by remember(setting) { store.observe(setting) }.collectAsState(null)
+    var open by remember { mutableStateOf(false) }
+    // Follows the pen while dragging; saved when the drag ends, then dropped once the stored value arrives.
+    var dragging by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(value) { dragging = null }
+    val shown = dragging ?: value
+    val customColour = shown?.takeIf { it !in setting.presets }
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(setting.title, style = MaterialTheme.typography.bodyLarge)
         Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -113,6 +121,23 @@ private fun ColourRow(setting: ColourSetting, store: SettingsStore) {
                         .selectable(selected = selected, onClick = { store.set(setting, colour) }),
                 )
             }
+            // The custom swatch: the custom colour when one is set, else a rainbow ring. Opens the picker.
+            Box(
+                Modifier.size(40.dp)
+                    .clip(CircleShape)
+                    .background(customColour?.let { SolidColor(Color(it)) } ?: CustomColourBrush)
+                    .border(if (customColour != null) 3.dp else 1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                    .selectable(selected = customColour != null, onClick = { open = !open })
+                    .semantics { contentDescription = "Custom ${setting.title}" },
+            )
+        }
+        if (open) {
+            ColourPicker(
+                argb = shown ?: setting.default,
+                onColour = { dragging = it },
+                onColourFinished = { dragging?.let { store.set(setting, it) } },
+                modifier = Modifier.padding(top = 12.dp),
+            )
         }
     }
 }
@@ -124,24 +149,17 @@ private fun SliderRow(setting: SliderSetting, store: SettingsStore) {
     var dragging by remember { mutableStateOf<Float?>(null) }
     val shown = dragging ?: stored ?: return
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text("${setting.title}: ${formatStep(shown)} ${setting.unit}", style = MaterialTheme.typography.bodyLarge)
-        Slider(
+        Text("${setting.title}: ${formatPoints(shown)} ${setting.unit}", style = MaterialTheme.typography.bodyLarge)
+        StepSlider(
             value = shown,
+            range = setting.range,
+            step = setting.step,
             onValueChange = { dragging = it },
             onValueChangeFinished = {
                 dragging?.let { store.set(setting, it) }
                 dragging = null
             },
-            valueRange = setting.range,
-            steps = ((setting.range.endInclusive - setting.range.start) / setting.step).roundToInt() - 1,
             modifier = Modifier.widthIn(max = 480.dp),
         )
     }
-}
-
-/** Up to two decimals, without trailing zeros: 0.75 -> "0.75", 1.5 -> "1.5", 2.0 -> "2". */
-private fun formatStep(value: Float): String {
-    val hundredths = (value * 100).roundToInt()
-    val decimals = (hundredths % 100).toString().padStart(2, '0').trimEnd('0')
-    return if (decimals.isEmpty()) "${hundredths / 100}" else "${hundredths / 100}.$decimals"
 }

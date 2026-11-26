@@ -82,3 +82,11 @@ Status: **open**, **done** or **dropped**.
 | 32 | Agent types added mid-session can't be spawned until the next session ("Agent type 'reviewer' not found"); the workflow review fell back to `general-purpose` told to act as `reviewer.md`. | In the `orchestrate` skill: after adding or changing an agent type, use that fallback for the rest of the session. | open: add with idea 31 |
 | 33 | Token review data (`scripts/agent-tokens.py`): turning off the unrelated skills cut a subagent's start from ~44.4k to ~40.2k. The workflow reviewer still read one file whole (~10k tokens in a single Read). | Measure the new agent types on #9 (idea 27's comparison). If whole-file reads persist, name in `reviewer.md` the files to read by section. | open: check at the first cleanup after #9 |
 | 34 | CLAUDE.md section check: every remaining section is used by at least two roles (Directory layout and Architecture by implementer and reviewer, graphify by all, Agent skills by orchestrator and reviewer for `gh`). | No move proposed this time. | done |
+
+## 2026-11-26: #9 colour picker
+
+| # | Problem | Fix | Status |
+|---|---|---|---|
+| 35 | The toolbar re-centres when the tool changes, so taps at fixed coordinates after a tool switch missed. | Add a `tap_desc <content-desc>` helper to `scripts/device.sh` that reads bounds from `ui` each time; note in `device-check` to re-read bounds after a toolbar change. | open |
+| 36 | `tap_text` matches `text` only, so it couldn't select icon buttons ("Highlighter"), which carry a content-desc. | Same helper as 35. | open: with 35 |
+| 37 | The plan didn't say the db evidence should be saved, so the evidence folder held only screenshots; the orchestrator had to rerun db queries. | Plans and `implementer.md`: save each db query's output in `<N>-evidence/db.txt`. | open |

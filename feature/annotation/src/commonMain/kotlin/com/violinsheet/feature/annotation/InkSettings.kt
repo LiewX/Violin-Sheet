@@ -34,6 +34,10 @@ val HIGHLIGHTER_SIZES = listOf(6f, 12f, 20f)
 /** Eraser size presets: the eraser circle's diameter in points on the Page. */
 val ERASER_SIZES = listOf(4f, 12f, 30f)
 
+/** The eraser size slider's range in points, stepping by 1 (the eraser has no Setting). */
+val ERASER_SIZE_RANGE = 2f..40f
+const val ERASER_SIZE_STEP = 1f
+
 /** Settings declared by Ink mode. Add one here and it appears on the Settings page. */
 object InkSettings {
     val penColour = ColourSetting(

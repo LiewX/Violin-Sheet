@@ -25,3 +25,11 @@ All checks for #2–#6, and the fixes after the first check (palm rest, zoomed t
 - [ ] The eraser circle follows the pen smoothly, and live erasing keeps up on a Page with many strokes.
 - [ ] Area eraser across a line leaves two clean pieces; undo brings the whole line back in its place.
 - [ ] Toolbar icons (pen, marker, eraser) read clearly, and the toolbar fits in portrait.
+
+## #9 Colour picker and size sliders
+
+- [ ] Pen dragging in the picker while a finger touches the Page: the Page doesn't turn.
+- [ ] Palm landing on the panel while the pen draws on the Page: the picker may move (accepted for V1.0); say if it gets in the way.
+- [ ] Picker feel with the S Pen: hue strip and square easy to hit; panel size and position look right.
+- [ ] A custom highlighter colour looks translucent on the Page, and its preview swatch matches.
+- [ ] Settings page: the picker opens under the colour row and a custom colour becomes the default for the next Sheet.

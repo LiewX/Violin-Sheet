@@ -8,6 +8,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":core:data"))
+            api(project(":feature:settings"))
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

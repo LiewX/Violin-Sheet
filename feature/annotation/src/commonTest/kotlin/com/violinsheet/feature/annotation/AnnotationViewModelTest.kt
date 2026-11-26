@@ -75,10 +75,13 @@ class AnnotationViewModelTest {
             rows.filter { it.id in ids && it.sheetId != sheetId }.map { it.id }
     }
 
-    private object NoSettings : SettingDao {
-        override fun observe(key: String) = flowOf<String?>(null)
+    /** Stored Settings by key; empty means every Setting is at its declared default. */
+    private class FakeSettings(val stored: Map<String, String> = emptyMap()) : SettingDao {
+        override fun observe(key: String) = flowOf(stored[key])
         override suspend fun upsert(value: SettingValue) = Unit
     }
+
+    private var settingsDao = FakeSettings()
 
     private val dao = FakeInkDao()
     private val sheetId = 7L
@@ -112,7 +115,7 @@ class AnnotationViewModelTest {
     private fun TestScope.viewModel(store: ViewModelStore = ViewModelStore()): AnnotationViewModel {
         val repository = ink ?: InkRepository(dao, backgroundScope).also { ink = it }
         val factory = viewModelFactory {
-            initializer { AnnotationViewModel(sheetId, repository, SettingsStore(NoSettings, backgroundScope), EraserMemory()) { nextFallbackId++ } }
+            initializer { AnnotationViewModel(sheetId, repository, SettingsStore(settingsDao, backgroundScope), EraserMemory()) { nextFallbackId++ } }
         }
         return ViewModelProvider.create(store, factory)[AnnotationViewModel::class]
     }
@@ -220,6 +223,30 @@ class AnnotationViewModelTest {
         settle()
         assertEquals(emptyList(), reopened.ids())
         assertEquals(emptySet(), savedIds())
+    }
+
+    @Test fun reopenedSheetStartsFromSettingsNotFromToolbarChanges() = runTest {
+        settingsDao = FakeSettings(
+            mapOf(
+                InkSettings.penColour.key to InkSettings.penColour.encode(0xFF123456.toInt()),
+                InkSettings.penSize.key to InkSettings.penSize.encode(4f),
+                InkSettings.highlighterColour.key to InkSettings.highlighterColour.encode(0x99ABCDEF.toInt()),
+                InkSettings.highlighterSize.key to InkSettings.highlighterSize.encode(9f),
+            ),
+        )
+        val first = viewModel()
+        settle()
+        val stored = first.tools.value
+        assertEquals(0xFF123456.toInt(), stored.pen.colour)
+        first.setTools(stored.copy(pen = stored.pen.copy(colour = 0xFF654321.toInt(), size = 10f), highlighter = stored.highlighter.copy(colour = 0x99010203.toInt(), size = 30f)))
+        assertEquals(10f, first.tools.value.pen.size)
+
+        val reopened = viewModel()
+        settle()
+        assertEquals(stored.pen, reopened.tools.value.pen)
+        assertEquals(stored.highlighter, reopened.tools.value.highlighter)
+        assertEquals(4f, reopened.tools.value.pen.size)
+        assertEquals(9f, reopened.tools.value.highlighter.size)
     }
 
     @Test fun failedWriteSetsSaveFailed() = runTest {
