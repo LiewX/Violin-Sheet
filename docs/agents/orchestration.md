@@ -40,7 +40,7 @@ Issues run one at a time: there is one tablet, and the issues block each other.
 4. **Commit.** The orchestrator:
    - reruns `./gradlew build`,
    - checks the report (all parts' reports, after a split) against the plan,
-   - updates `PROGRESS.md`, and copies the reports' manual checks and friction into `docs/manual-checks.md` and `docs/workflow-ideas.md`,
+   - updates `PROGRESS.md`, and copies the reports' manual checks (multi-pointer cases first) and friction into `docs/manual-checks.md` and `docs/workflow-ideas.md`,
    - commits to `main` with `Closes #N` and pushes,
    - updates the knowledge graph (see Models),
    - deletes the issue's files in `handoffs/` (plans, reports, evidence).
@@ -74,14 +74,18 @@ They live in `handoffs/` (git-ignored), so a cold subagent gets the whole contex
 <Files to create or change, and existing code to reuse (with paths).>
 
 ## Rules
-- Read CLAUDE.md first and follow these sections: Architecture, Directory layout, UI/UX, and Build & run (its commands, the Git Bash and adb notes, and the tablet-data rule). Its Working Style section is for the orchestrator, not you.
+- Read CLAUDE.md first and follow these sections: Architecture, Directory layout, UI/UX, and all of Build & run (commands, editing, Git Bash and adb notes, the tablet-data rule). Its Working Style section is for the orchestrator, not you.
 - Build: the quick check from Build & run after each edit; `./gradlew build` before each report.
 - Tablet: `source scripts/device.sh`, and use `device_test`. Never `pm clear`, never uninstall, and never run `connectedAndroidTest` (it uninstalls the app and wipes the user's data).
+- Before using a library call that is new to this codebase, read its KDoc or sources, not just its signature (CanvasStrokeRenderer.draw only uses its transform as a hint, which drew Ink in the wrong place).
 - Save key screenshots and db output in handoffs/<N>-evidence/ and list them in the report.
 - Don't commit, don't edit PROGRESS.md, docs/manual-checks.md or docs/workflow-ideas.md, don't update the knowledge graph (querying it is fine), don't ask the user: put questions in the report.
 
 ## Verify
 <Unit tests to add, and the tablet checks to run.>
+
+## Cases adb can't simulate
+<Input issues only: the multi-pointer cases (palm then pen, pen then finger, two hands) and how the design handles each. "None" if not an input issue.>
 
 ## Report
 Write handoffs/<N>-report.md (after a split: <N>-report-<part>.md) from the template in docs/agents/orchestration.md, then stop.
@@ -108,7 +112,7 @@ Write handoffs/<N>-report.md (after a split: <N>-report-<part>.md) from the temp
 <Design questions or spec gaps for the orchestrator. "None" if none.>
 
 ## Manual checks for the user
-<What only a person can judge, as checklist items.>
+<What only a person can judge, as checklist items. Multi-pointer cases from the plan first.>
 
 ## What slowed me down or went wrong
 <Tool, doc or rule friction, each with a concrete fix.>

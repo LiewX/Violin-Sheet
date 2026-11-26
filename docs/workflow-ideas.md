@@ -22,10 +22,10 @@ Status: **open**, **done** or **dropped**.
 
 | # | Problem | Fix | Status |
 |---|---|---|---|
-| 10 | Two long Bash scripts that wrote several files through heredocs failed to parse ("unexpected EOF while looking for matching `'`"), so nothing ran and the work had to be redone. | Write each new source file with the Write tool. Keep Bash for running commands and short single-file edits. | open |
+| 10 | Two long Bash scripts that wrote several files through heredocs failed to parse ("unexpected EOF while looking for matching `'`"), so nothing ran and the work had to be redone. | Write each new source file with the Write tool. Keep Bash for running commands and short single-file edits. | done: rule in `CLAUDE.md` → Build & run (Edits and new files) |
 | 11 | uiautomator dumps don't include snackbar text, so two message checks came back empty although the messages showed. | Check snackbar messages with `screencap` and look at the image (noted in `CLAUDE.md` → Build & run). | done |
 | 12 | Driving a text field over adb took three tries: keys sent before the field had focus went nowhere, and ctrl+A didn't select. | Tap the field first, then send `KEYCODE_MOVE_END` plus enough `KEYCODE_DEL`s. Add a `type_into <field> <text>` helper to `scripts/device.sh` if this comes up again. | open |
-| 13 | Each uiautomator dump over adb takes about 2 seconds, so a timed check (Undo within 10 s) ran out of time, and a tap at a remembered position hit the wrong row after the list changed (Back then closed the app). | For timed checks, read every position before the action and tap by coordinates without dumping in between. After the list changes, read positions again. | open |
+| 13 | Each uiautomator dump over adb takes about 2 seconds, so a timed check (Undo within 10 s) ran out of time, and a tap at a remembered position hit the wrong row after the list changed (Back then closed the app). | For timed checks, read every position before the action and tap by coordinates without dumping in between. After the list changes, read positions again. | done: in `CLAUDE.md` → Build & run (Device checks) |
 
 ## 2026-11-26: #4
 
@@ -38,12 +38,12 @@ Status: **open**, **done** or **dropped**.
 
 | # | Problem | Fix | Status |
 |---|---|---|---|
-| 16 | Ink strokes drew at the wrong place at first: `CanvasStrokeRenderer.draw` takes the transform only as a hint, and the canvas has to be moved by the caller. Found only on the device. | Read the KDoc of a new library's main calls before using them, not just the signatures from `javap`. A screenshot check right after the first draw caught it quickly; keep doing that. | open |
+| 16 | Ink strokes drew at the wrong place at first: `CanvasStrokeRenderer.draw` takes the transform only as a hint, and the canvas has to be moved by the caller. Found only on the device. | Read the KDoc of a new library's main calls before using them, not just the signatures from `javap`. A screenshot check right after the first draw caught it quickly; keep doing that. | done: in the implementer plan template's Rules |
 | 17 | A full-screen Android view (the Ink layer) hid the Compose nodes beneath it from accessibility, and after that Compose stopped refreshing those nodes when zooming. About 20 minutes were lost probing it through throwaway device tests. | Check behaviour in device tests (did it turn, did it draw), not accessibility bounds. Label Pages from above any interop view. Time-box probing a platform quirk to about 10 minutes, then work around it and log it here. | done: labels were frozen because they were far larger than the window; clipping them to the screen fixed it, and the direct zoom check is back |
 
 ## 2026-11-26: fixes after the manual check
 
 | # | Problem | Fix | Status |
 |---|---|---|---|
-| 18 | Palm rejection broke in real use, though every adb check passed: adb can't rest a palm and hold a pen at the same time, and the first design (a View touch listener for the pen) only failed in that case. | For input features, list in the plan the multi-pointer cases adb can't simulate (palm then pen, pen then finger), and design for them explicitly. Put them first in `docs/manual-checks.md`. | open |
-| 19 | The Bash heredoc failure (idea 10) happened twice more this session, after it was logged. | Idea 10's fix applies to Python edit scripts too: write the script with the Write tool, then run `python -I <file>`. | open |
+| 18 | Palm rejection broke in real use, though every adb check passed: adb can't rest a palm and hold a pen at the same time, and the first design (a View touch listener for the pen) only failed in that case. | For input features, list in the plan the multi-pointer cases adb can't simulate (palm then pen, pen then finger), and design for them explicitly. Put them first in `docs/manual-checks.md`. | done: "Cases adb can't simulate" section in the plan template |
+| 19 | The Bash heredoc failure (idea 10) happened twice more this session, after it was logged. | Idea 10's fix applies to Python edit scripts too: write the script with the Write tool, then run `python -I <file>`. | done: same rule as idea 10 |
