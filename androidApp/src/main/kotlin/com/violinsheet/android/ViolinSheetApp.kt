@@ -27,6 +27,6 @@ class ViolinSheetApp : Application() {
 
     /** Every feature's Settings. A feature with Settings adds its list here once; the page picks up the rest. */
     val settingsRegistry by lazy { SettingsRegistry(listOf(ViewerSettings.all, InkSettings.all)) }
-    val inkRepository by lazy { InkRepository(database.inkDao()) }
+    val inkRepository by lazy { InkRepository(database.inkDao(), appScope) }
     val sheetImporter by lazy { SheetImporter(this, sheetRepository) }
 }

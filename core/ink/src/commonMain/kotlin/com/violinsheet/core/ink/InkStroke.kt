@@ -6,7 +6,7 @@ package com.violinsheet.core.ink
  * stroke keeps its place and thickness relative to the notes at any zoom and layout.
  */
 data class InkStroke(
-    /** Random id given when the stroke is drawn, so undo and saving can refer to it before it is stored. */
+    /** Given when the stroke is drawn (StrokeIds), increasing in drawing order; undo and saving refer to it. */
     val id: Long,
     val pageIndex: Int,
     /** ARGB. */

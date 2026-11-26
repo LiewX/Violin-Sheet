@@ -8,7 +8,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | Setup | Project skeleton (Kotlin Multiplatform modules, Compose Multiplatform, Room storage — ADR 0003) | Done | #1 verified on the Galaxy Tab S9+ 2026-11-26. Android Ink API 1.0 added in #6 |
 | 1. Annotation editing | Sheet import and list (rename, delete with undo bar, backup without PDFs + hash reattach) | Done | #1, #3. A real Google backup/restore is only simulated (PDF files deleted); see `docs/manual-checks.md` |
 | 1. Annotation editing | PDF Page rendering, zoom/pan, page turns, 1-up/2-up layout | Done | #2, #4 |
-| 1. Annotation editing | Ink mode: pen, highlighter, eraser, side-button erase | In Progress | Pen with presets, autosave and Ink Settings done (#6); highlighter, eraser and side button in #8 |
+| 1. Annotation editing | Ink mode: pen, highlighter, eraser, side-button erase | In Progress | Pen with presets, autosave and Ink Settings done (#6); highlighter, eraser and side button next, in #8 |
 | 1. Annotation editing | Ink lasso: move, resize, rotate, copy/paste within a Sheet, delete | Not Started | — |
 | 1. Annotation editing | Colour picker and size sliders | Not Started | — |
 | 1. Annotation editing | Symbols: fingerings | Not Started | — |
@@ -22,7 +22,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Text mode: Text boxes (italic/regular) and Links | Not Started | — |
 | 1. Annotation editing | Layers (Ink, Edit, Text) and visibility toggles | Not Started | — |
 | 1. Annotation editing | Settings page (feature-declared app-wide defaults) | In Progress | Page, registry and Reading Setting done (#5); Ink, Edit, Text and Links Settings arrive with their features |
-| 1. Annotation editing | Undo/redo | Not Started | Next session: #7 (`model:opus`), the first issue run as orchestrator + implementer |
+| 1. Annotation editing | Undo/redo | In Progress | Undo stack, Ink draw undo/redo and toolbar buttons done (#7); lasso, Symbols, Covers and Text boxes add their commands with their features |
 | 1. Annotation editing | Autosave | Not Started | — |
 | 1. Annotation editing | Sharps/flats/naturals with spacing adjustment | Post-V1.0 | Needs music data |
 | 1. Annotation editing | Paste Ink across Sheets | Post-V1.0 | — |

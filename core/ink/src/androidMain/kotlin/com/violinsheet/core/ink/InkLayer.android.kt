@@ -33,10 +33,15 @@ import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
 import androidx.ink.strokes.StrokeInput
-import kotlin.random.Random
 
 /** Smallest distance the brush tells apart, in Page points. */
 private const val EPSILON = 0.05f
+
+/** Far longer than the strokes list takes to show a handed-over stroke (a frame), short enough for an undone one. */
+private const val UNDONE_WET_STROKE_MILLIS = 300L
+
+// Strokes finish on the main thread only, as StrokeIds needs.
+private val strokeIds = StrokeIds(System::currentTimeMillis)
 
 private fun brush(colour: Int, size: Float) = Brush.createWithColorIntArgb(StockBrushes.pressurePen(), colour, size, EPSILON)
 
@@ -59,7 +64,7 @@ private fun Stroke.toInkStroke(pageIndex: Int): InkStroke {
         inputs.populate(i, input)
         InkPoint(input.x, input.y, input.pressure, input.elapsedTimeMillis)
     }
-    return InkStroke(Random.nextLong(), pageIndex, brush.colorIntArgb, brush.size, points)
+    return InkStroke(strokeIds.next(), pageIndex, brush.colorIntArgb, brush.size, points)
 }
 
 /**
@@ -84,6 +89,7 @@ actual fun InkLayer(
     // stroke and only for Pages on screen, not for the whole Sheet on every change.
     val built = remember { HashMap<Long, Stroke>() }
     val ids = remember(strokes) { strokes.mapTo(HashSet()) { it.id }.also { built.keys.retainAll(it) } }
+    val currentIds by rememberUpdatedState(ids)
     val currentPlacements by rememberUpdatedState(placements)
     val currentPen by rememberUpdatedState(pen)
     val currentOnStroke by rememberUpdatedState(onStroke)
@@ -209,6 +215,15 @@ actual fun InkLayer(
                                     val inkStroke = stroke.toInkStroke(page)
                                     handedOver[id] = inkStroke.id
                                     currentOnStroke(inkStroke)
+                                    // Undone before [strokes] ever showed it (undo tapped within a frame of the lift),
+                                    // the draw below never sees it to take it out: drop it here once [strokes] has
+                                    // surely caught up.
+                                    postDelayed({
+                                        if (handedOver[id]?.let { it !in currentIds } == true) {
+                                            handedOver.remove(id)
+                                            removeFinishedStrokes(setOf(id))
+                                        }
+                                    }, UNDONE_WET_STROKE_MILLIS)
                                 }
                             }
                         },

@@ -20,6 +20,7 @@ import com.violinsheet.core.pdf.openPdf
 import com.violinsheet.feature.settings.SettingsScreen
 import com.violinsheet.feature.annotation.AnnotationViewModel
 import com.violinsheet.feature.annotation.InkToolbar
+import com.violinsheet.feature.annotation.UndoControls
 import com.violinsheet.core.ink.InkLayer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
@@ -70,14 +71,18 @@ class MainActivity : ComponentActivity() {
                         val pdfFile = entry.arguments?.getString("pdfFile").orEmpty()
                         // The list only opens Sheets whose PDF exists (a missing one shows the re-import prompt).
                         val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile)), sheetId, app.sheetRepository, app.settingsStore) }
-                        val annotations = viewModel { AnnotationViewModel(sheetId, app.inkRepository, app.settingsStore, app.appScope) }
+                        val annotations = viewModel { AnnotationViewModel(sheetId, app.inkRepository, app.settingsStore) }
                         val strokes by annotations.strokes.collectAsState()
                         val pen by annotations.pen.collectAsState()
                         val saveFailed by annotations.saveFailed.collectAsState()
+                        val canUndo by annotations.canUndo.collectAsState()
+                        val canRedo by annotations.canRedo.collectAsState()
                         SheetScreen(
                             viewModel,
                             overlay = { placements -> InkLayer(placements, strokes, pen, annotations::addStroke, Modifier.fillMaxSize()) },
-                            toolbar = { InkToolbar(pen, annotations::setPen, saveFailed) },
+                            toolbar = {
+                                InkToolbar(pen, annotations::setPen, UndoControls(canUndo, canRedo, annotations::undo, annotations::redo), saveFailed)
+                            },
                         )
                     }
                 }

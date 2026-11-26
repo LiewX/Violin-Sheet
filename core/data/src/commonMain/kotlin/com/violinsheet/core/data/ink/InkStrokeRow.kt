@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import com.violinsheet.core.data.Sheet
@@ -30,6 +31,10 @@ interface InkDao {
     @Query("SELECT * FROM InkStroke WHERE sheetId = :sheetId ORDER BY id")
     suspend fun forSheet(sheetId: Long): List<InkStrokeRow>
 
-    @Insert
+    /** Replaces a row with the same id, so a redo that re-saves a stroke whose undo didn't delete it still succeeds. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(row: InkStrokeRow)
+
+    @Query("DELETE FROM InkStroke WHERE id = :id")
+    suspend fun delete(id: Long)
 }
