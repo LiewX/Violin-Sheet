@@ -13,21 +13,20 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
 
 ## Working Style
 
+These rules are for the main session, which orchestrates issue work. Implementer subagents follow only what their plan lists ([`docs/agents/orchestration.md`](docs/agents/orchestration.md)).
+
 - **Ask before assuming** when a requirement is unclear: present the tradeoff, don't pick silently.
 - **Justify architectural decisions** in one or two sentences when you introduce them. Record hard-to-reverse ones as an ADR.
 - **Grill before big changes.** When a request changes scope, adds or removes a feature, or forces a significant design decision, run a grilling session (`/grill-with-docs`) before implementing. Update `docs/SPECS.md`, `GLOSSARY.md` and `docs/adr/` from its outcome.
 - **Review the whole spec after every grilling.** Once its outcome is written into the docs, read `docs/SPECS.md` end to end (with `GLOSSARY.md`, `CLAUDE.md` and the ADRs) and check for contradictions, stale wording and gaps the new decisions created. Fix wording-only issues directly; bring anything that needs a decision back to the user.
 - **Don't implement Post-V1.0 or Nice-to-have features**, even if asked in passing. Note them in `PROGRESS.md` instead.
-- **Review before committing an issue.** Run `/code-review` (the `mattpocock-skills:code-review` skill) on the issue's changes: it checks them against the coding standards and the issue's acceptance criteria. Fix or explicitly defer each finding, rerun the build, then commit.
-- **Working through issues:** once an issue is reviewed, built and checked on the tablet over adb, commit straight to `main` and push without asking. End the message with `Closes #N`, so the push closes the issue. Then go straight on to the next issue. Stop only for something that needs the user: a design change, a spec gap, or a decision the docs don't settle.
-- **Manual checks:** for each finished issue, add the things only a person can judge (S Pen feel, palm rejection, visual quality) to [`docs/manual-checks.md`](docs/manual-checks.md). The user works through that list when they check in.
-- **Device check early:** when an issue's acceptance needs the tablet, run `adb devices` at the start and ask the user to plug it in while the code is being written.
-- **Model choice** (also for subagents, through the Agent tool's `model`):
-  - **Opus:** planning, architecture, and the hard algorithm work: Page layout and zoom math, Ink geometry and lasso hit-testing, staff-line detection and Symbol scale, and, after V1.0, music data (MusicXML edge cases) and audio timing (automatic page flipping, metronome). Also reviews of design-heavy changes.
-  - **Sonnet:** routine implementation, refactors and test writing once the plan is settled, and the routine standards/spec review subagents. The main session switches with `/model`; only the user can do that, so say when a stretch of routine work is coming.
-  - **Haiku:** quick lookups (Explore searches, finding a symbol or file) and scripted high-volume runs. Never sustained coding.
+- **Review before committing** an issue or a small fix. Run the two reviews of the `mattpocock-skills:code-review` process (coding standards, and spec against the issue's acceptance criteria) as subagents spawned directly with `model: opus`; the skill itself can't set their model. Fix or explicitly defer each finding, rerun the build, then commit.
+- **Working through issues:** once an issue is reviewed, built and checked on the tablet over adb, the orchestrator commits straight to `main` and pushes without asking. End the message with `Closes #N`, so the push closes the issue. Then go straight on to the next issue. Stop only for something that needs the user: a design change, a spec gap, or a decision the docs don't settle.
+- **Manual checks:** for each finished issue, the orchestrator adds the things only a person can judge (S Pen feel, palm rejection, visual quality), from the implementer's report and its own review, to [`docs/manual-checks.md`](docs/manual-checks.md). The user works through that list when they check in.
+- **Device check early:** when an issue's acceptance needs the tablet, the orchestrator runs `adb devices` while planning, before spawning the implementer, and asks the user to plug it in if needed.
+- **Orchestration and model choice:** issue work always runs as in [`docs/agents/orchestration.md`](docs/agents/orchestration.md): an Opus orchestrator (this session; check at start that it is on Opus) plans, delegates to one implementer subagent per issue on the model of its `model:` label, reviews on Opus and commits.
 - **Update `PROGRESS.md` after every session.**
-- **At cleanup** (the user asks before ending a session), update [`docs/workflow-ideas.md`](docs/workflow-ideas.md): add what slowed the session or caused mistakes, each with a concrete fix, and mark earlier ideas **done** or **dropped**.
+- **At cleanup** (the user asks before ending a session), update [`docs/workflow-ideas.md`](docs/workflow-ideas.md): add what slowed the orchestration or caused mistakes, each with a concrete fix, and mark earlier ideas **done** or **dropped**. (Implementers' friction is copied in at each issue's commit.)
 
 ## Tech Stack
 
@@ -56,6 +55,7 @@ Cross-platform violin sheet music app. V1.0 ships on **Samsung Galaxy Tab S9+ (A
   - Screenshot: `adb exec-out screencap -p > shot.png`
   - Crashes: `adb logcat -d -b crash`
   - Database: copy `violinsheet.db`, `-wal` and `-shm` with `adb exec-out run-as com.violinsheet cat databases/<file>` and open them with Python's `sqlite3`.
+- **The tablet holds the user's own data** (Sheets, Ink). Never `pm clear` or uninstall the app without asking. Never change a database version that has already been installed on the tablet, even before it is committed: add the next version with a migration instead.
 - **Versions** live only in `gradle/libs.versions.toml`. Its header lists which versions must move together.
 
 ## Architecture
@@ -74,7 +74,7 @@ CLAUDE.md, GLOSSARY.md, PROGRESS.md   Root docs (skills expect GLOSSARY.md at th
 docs/
   SPECS.md                            What to build
   adr/                                Decisions, numbered NNNN-title.md
-  agents/                             Config for the agent skills (issue tracker, labels, domain docs)
+  agents/                             Config for the agent skills (issue tracker, labels, domain docs) and orchestration
   workflow-ideas.md                   Workflow problems and fixes, reviewed at each cleanup
 gradle/libs.versions.toml             Every dependency and plugin version, nowhere else
 buildSrc/                             Convention plugins (violinsheet.kmp-library: shared KMP + Android setup)
@@ -90,6 +90,7 @@ feature/settings/                     The Settings page, generated from each fea
 feature/metronome/                    Stub (Post-V1.0)
 scripts/                              Dev helper scripts, created when the first one is needed
 graphify-out/                         Generated knowledge graph, git-ignored
+handoffs/                             Orchestrator ↔ implementer plan and report files, git-ignored, deleted after each push
 ```
 
 - Inside a module: `src/{commonMain,androidMain,iosMain,commonTest}/kotlin/com/violinsheet/<module>/`, where the package matches the Gradle path (`:core:data` → `com.violinsheet.core.data`).
@@ -134,6 +135,10 @@ Issues live in this repo's GitHub Issues, via the `gh` CLI. See `docs/agents/iss
 ### Triage labels
 
 Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Orchestration
+
+Issue work runs as an Opus orchestrator with implementer and review subagents. See `docs/agents/orchestration.md`. Each issue has a `model:opus` or `model:sonnet` label (`docs/agents/triage-labels.md`).
 
 ### Domain docs
 

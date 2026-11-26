@@ -13,3 +13,12 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
 Edit the "Label in our tracker" column to match whatever vocabulary you actually use.
+
+## Model labels
+
+Every issue also gets exactly one model label at triage. It picks the implementer subagent's model ([orchestration.md](orchestration.md)).
+
+| Label | Use for |
+|---|---|
+| `model:opus` | Architecture or hard algorithms: undo stack, stroke hit-testing and pen input, lasso, a new mode or layer, staff-line detection, curve and hairpin geometry, music data, audio timing |
+| `model:sonnet` | Routine work once the design is settled: UI controls, more of an existing kind (Symbols, Settings), storage plumbing, toggles |
