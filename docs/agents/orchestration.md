@@ -17,6 +17,7 @@ How issue work runs: an Opus **orchestrator** (the main session) plans, delegate
 - Explore results are facts (where things are). Design decisions stay with Opus.
 - Pass the model explicitly with the Agent tool's `model` parameter. Implementers and reviewers are `general-purpose` agents (they need every tool, including Bash for builds, adb and `git diff`), without worktree isolation: the tablet and Gradle work on the one tree.
 - **At session start**, before any issue work, the orchestrator checks it is running on Opus. If not, it asks the user to run `/model opus` and waits.
+- **The orchestrator's context is the scarce one:** it reads with offset/limit or grep, not whole files, filters Gradle output, and opens a screenshot only when an implementer's evidence needs a look. Code, builds and device work stay with the implementers.
 - Unattended runs rely on **auto mode**, which the user turns on; there is no permission allowlist.
 - Any agent may query the knowledge graph (`graphify-out/`) to find code. Only the orchestrator updates it, after each commit that changes code (issue or small fix), with `/graphify update` (or `graphify update .` in a terminal if the skill is unavailable).
 

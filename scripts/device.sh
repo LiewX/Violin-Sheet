@@ -34,6 +34,15 @@ tap_text() {
     sleep "${2:-1}"
 }
 
+# Replaces the text of the field matching regex $1 with $2: taps it first (keys sent before focus are lost),
+# then clears it with MOVE_END plus DELs, since ctrl+A doesn't select over adb.
+type_into() {
+    tap_text "$1" || return 1
+    adb shell input keyevent KEYCODE_MOVE_END
+    adb shell input keyevent $(printf 'KEYCODE_DEL %.0s' $(seq 80))
+    adb shell input text "${2// /%s}" # input text takes %s for a space
+}
+
 has_text() { ui | grep -qE "(text|content-desc)=\"$1\""; }
 
 # Runs SQL against the app's database (debug build) and prints the rows.
