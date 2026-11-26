@@ -4,7 +4,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 
 | Feature | Sub-feature | Status | Next Step |
 |---|---|---|---|
-| Setup | Docs: spec, glossary, ADR 0001–0003, agent skills, directory layout (`CLAUDE.md`), [workflow ideas](docs/workflow-ideas.md); spec re-reviewed 2026-11-26 | Done | V1.0 is broken into GitHub issues #1–#21 (`ready-for-agent`, with blocking links) |
+| Setup | Docs: spec, glossary, ADR 0001–0003, agent skills, directory layout (`CLAUDE.md`), [workflow ideas](docs/workflow-ideas.md), [orchestration](docs/agents/orchestration.md) with `model:` labels on #7–#21; spec re-reviewed 2026-11-26 | Done | V1.0 is broken into GitHub issues #1–#21 (`ready-for-agent`, with blocking links) |
 | Setup | Project skeleton (Kotlin Multiplatform modules, Compose Multiplatform, Room storage — ADR 0003) | Done | #1 verified on the Galaxy Tab S9+ 2026-11-26. Android Ink API 1.0 added in #6 |
 | 1. Annotation editing | Sheet import and list (rename, delete with undo bar, backup without PDFs + hash reattach) | Done | #1, #3. A real Google backup/restore is only simulated (PDF files deleted); see `docs/manual-checks.md` |
 | 1. Annotation editing | PDF Page rendering, zoom/pan, page turns, 1-up/2-up layout | Done | #2, #4 |
@@ -22,7 +22,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Text mode: Text boxes (italic/regular) and Links | Not Started | — |
 | 1. Annotation editing | Layers (Ink, Edit, Text) and visibility toggles | Not Started | — |
 | 1. Annotation editing | Settings page (feature-declared app-wide defaults) | In Progress | Page, registry and Reading Setting done (#5); Ink, Edit, Text and Links Settings arrive with their features |
-| 1. Annotation editing | Undo/redo | Not Started | — |
+| 1. Annotation editing | Undo/redo | Not Started | Next session: #7 (`model:opus`), the first issue run as orchestrator + implementer |
 | 1. Annotation editing | Autosave | Not Started | — |
 | 1. Annotation editing | Sharps/flats/naturals with spacing adjustment | Post-V1.0 | Needs music data |
 | 1. Annotation editing | Paste Ink across Sheets | Post-V1.0 | — |

@@ -47,3 +47,11 @@ Status: **open**, **done** or **dropped**.
 |---|---|---|---|
 | 18 | Palm rejection broke in real use, though every adb check passed: adb can't rest a palm and hold a pen at the same time, and the first design (a View touch listener for the pen) only failed in that case. | For input features, list in the plan the multi-pointer cases adb can't simulate (palm then pen, pen then finger), and design for them explicitly. Put them first in `docs/manual-checks.md`. | done: "Cases adb can't simulate" section in the plan template |
 | 19 | The Bash heredoc failure (idea 10) happened twice more this session, after it was logged. | Idea 10's fix applies to Python edit scripts too: write the script with the Write tool, then run `python -I <file>`. | done: same rule as idea 10 |
+
+## 2026-11-26: model guidance and orchestration
+
+| # | Problem | Fix | Status |
+|---|---|---|---|
+| 20 | The session used about 70% of a 1M-token context. Most of it (about 600k) was tool output: whole-file reads, full screenshots, long Gradle logs. One session doing everything (plans, code, device checks, reviews) carried all of it. | The orchestration workflow (`docs/agents/orchestration.md`) moves code and device work into implementer subagents. The orchestrator also reads with offset/limit or grep, not whole files, and opens a screenshot only when an implementer's evidence needs a look. Check context use after the first orchestrated issue. | open |
+| 21 | Twice, Gradle failed on Windows with "The process cannot access the file because it is being used by another process" (a daemon held a jar). Each time cost a rebuild. | When that error appears, run `./gradlew --stop` and rebuild. Add it to `CLAUDE.md` → Build & run if it happens again. | open |
+| 22 | Writing the model guidance took three review rounds to close its gaps (ownership of steps, split issues, evidence, recovery). The first version said which model, not how the work flows. | When a workflow rule is added, write it as a loop (who does what, in which order, what happens when it fails) and run the grilling before writing, not after. | open |
