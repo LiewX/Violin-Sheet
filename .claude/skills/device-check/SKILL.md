@@ -23,6 +23,13 @@ The tablet holds the user's own data (Sheets, Ink). Sheets 2 ("Test Etude", 1 Pa
 | `pixels <png> x,y …` | Print the RGB at each point (full-size screenshot coordinates) |
 | `device_test <Class>` | Run an androidTest class from `androidApp/src/androidTest`, keeping the app's data |
 | `crashes` | The crash log |
+| `bounds_of <regex>`, `selected` | `x1 y1 x2 y2` of the first matching node (empty if none); content-desc of every `checked="true"` node |
+| `hold_drag x1 y1 x2 y2` | Pen long press (1 s), then a drag |
+| `setting <key>`, `save_settings <file>`, `restore_settings <file>` | One stored Setting value; dump all Settings; put them back via `RestoreSettingsDeviceTest`, relaunch, diff |
+| `ok`, `fail`, `finish`, `expect <label> <actual> <expected>` | PASS/FAIL tally in the calling shell (not in a subshell or pipe); `finish` prints `PASS` or `FAIL: n failed` and returns non-zero on a fail; `expect` fails on an empty actual |
+| `guard_start <sheet>…`, `guard_end <sheet>…` | Save, then check, each user's Sheet's stroke ids (`$IDS_DIR/ids-<sheet>.txt`) with ok/fail |
+
+`launch` also sets `stay_on_while_plugged_in 3`, so the tablet stays awake while testing.
 
 - **Pen strokes:** `stroke` (built on `input stylus motionevent DOWN|MOVE|UP x y`) draws any polyline with tool type STYLUS; `input stylus swipe` only draws straight lines. Fingers: `adb shell input touchscreen tap|swipe`.
 - **Gestures `adb shell input` can't do** (pinch, multi-finger, the S Pen side button) go in a UiAutomator test under `androidApp/src/androidTest`, run with `device_test`. `sendevent` is blocked by SELinux.
@@ -44,6 +51,11 @@ Implementers check with text: `db` rows, the `ui` dump, and `pixels` for colours
 - The eraser's Stroke/Area mode chips both report `checked="false"`: tap the mode you need instead of reading it.
 - The `ui` dump reports `enabled="true"` on an Icon node always; the `IconButton` node one line above holds the real value.
 - Clean up test Ink on the test Sheet before closing it, and guard the user's Sheets with `ids_same` before and after. A `delete_strokes <sheetId>` helper (a small permanent androidTest) doesn't exist yet; build it in the first issue that needs it.
+- A pattern for `tap_text`/`center_of`/`has_text` is already anchored inside `text="…"`: don't add `^`/`$`.
+- Samsung's S Pen Air command icon floats over every app (bottom left): check `ui` before calling a floating control the app's.
+- For `selectable` choices use `clearAndSetSemantics { contentDescription }` after `selectable`, so `checked` and the description sit on one node; otherwise a one-line grep misses it.
+- Material's drag slop eats the first pixels of a slider drag: extend the drag past the end. A long press needs `hold_drag`.
+- UiAutomator `pinchOpen(p)`/`pinchClose(p)` move between the object's corners and points `p`·half-size in from them.
 
 ## Raw commands (debug build)
 
