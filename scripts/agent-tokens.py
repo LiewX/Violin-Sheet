@@ -2,7 +2,7 @@
 
 Usage: python -I scripts/agent-tokens.py [session-dir]
 With no argument it reads this project's most recently changed session under ~/.claude/projects/.
-Per subagent: its description, model, starting context (before any work), final context, tool output by tool
+First the main session's final context, then per subagent: its description, model, starting context (before any work), final context, tool output by tool
 (chars and ~tokens at 4 chars/token) and images read. Used at cleanup (orchestrate skill → Cleanup).
 """
 import collections
@@ -64,6 +64,10 @@ def summarise(path: Path) -> dict:
 def main() -> None:
     session = Path(sys.argv[1]) if len(sys.argv) > 1 else latest_session(project_dir())
     print(f"session: {session.name}")
+    main_transcript = session.parent / f"{session.name}.jsonl"
+    if main_transcript.exists():
+        # orchestrate → Session length: stop after the next commit at >= ~400k.
+        print(f"main session: final {summarise(main_transcript)['last']} tok")
     for transcript in sorted((session / "subagents").glob("agent-*.jsonl"), key=os.path.getmtime):
         meta_file = transcript.with_suffix(".meta.json")
         meta = json.loads(meta_file.read_text(encoding="utf-8")) if meta_file.exists() else {}

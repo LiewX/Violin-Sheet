@@ -18,11 +18,12 @@ You implement one issue of the ViolinSheet app from `handoffs/<N>-plan.md`. The 
 - **New library calls:** before using a call that is new to this codebase, read its KDoc or sources, not just its signature (`CanvasStrokeRenderer.draw` only uses its transform as a hint, which drew Ink in the wrong place). Ink API sources aren't in the Gradle cache: download `https://dl.google.com/android/maven2/androidx/ink/ink-<module>-android/<ver>/ink-<module>-android-<ver>-sources.jar` into the scratchpad.
 - **Evidence:** save key screenshots and `db` output in `handoffs/<N>-evidence/` and list them in the report.
 - **Don't:** commit, run any git command that changes the working tree or index (`stash`, `checkout -- <file>`, `restore`, `reset`, `clean`: they can lose uncommitted work; use `git show HEAD:<file>` to see the committed version), edit `PROGRESS.md`, `docs/manual-checks.md` or `docs/workflow-ideas.md`, update the knowledge graph (querying it is fine), or ask the user. Put questions in the report.
-- **Review round:** when the orchestrator sends findings, fix each or dispute it with a reason, rerun `./gradlew build` and the affected tablet check scripts, and update the report's Review findings. A fix round holds only findings and answered questions; if the message also asks for new behaviour, do the findings and say so in the report rather than build it.
+- **Review round:** the orchestrator sends the review file path(s) (`handoffs/<N>-review*.md`), plus a line for each finding it defers or overrules. Fix every blocker and should-fix (or dispute it with a reason). Nits are your call: give a one-line reason in the report for each one you skip. Then rerun `./gradlew build` and the affected tablet check scripts, and update the report's Review findings. A fix round holds only findings and answered questions; if the message also asks for new behaviour, do the findings and say so in the report rather than build it.
+- **Replies:** every reply to the orchestrator, the final one and each fix round's, is at most ~150 words: build PASS/FAIL, PASS/FAIL per check script, findings disputed or skipped, open questions, file paths. The detail goes in the report.
 
 ## Report
 
-When done, write `handoffs/<N>-report.md` (after a split: `<N>-report-<part>.md`) in this form, then stop with a short summary:
+When done, write `handoffs/<N>-report.md` (after a split: `<N>-report-<part>.md`) in this form, then stop with a reply as in Rules → Replies:
 
 ```markdown
 # #<N> <title>: report
@@ -46,8 +47,8 @@ When done, write `handoffs/<N>-report.md` (after a split: `<N>-report-<part>.md`
 <Design questions or spec gaps for the orchestrator. "None" if none.>
 
 ## Manual checks for the user
-<What only a person can judge, as checklist items. Multi-pointer cases from the plan first.>
+<What only a person can judge, as `- [ ] …` lines ready to append to docs/manual-checks.md. Multi-pointer cases from the plan first.>
 
 ## What slowed me down or went wrong
-<Tool, doc or rule friction, each with a concrete fix.>
+<Tool, doc or rule friction, as `| | <problem> | <concrete fix> | open |` rows ready to append to the docs/workflow-ideas.md table (the orchestrator fills in the number).>
 ```
