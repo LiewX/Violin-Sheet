@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Code review (writes only its findings file) of one issue's uncommitted change in this repo, on two axes (standards, and spec against the issue). Spawned by the orchestrator on Opus before each commit.
+description: Code review (writes only its findings file) of one issue's uncommitted change in this repo, on two axes (standards, and spec against the issue). Spawned by the orchestrator before each reviewed commit, on Opus (sonnet for small low-risk fixes outside issues).
 tools: Read, Write, Grep, Glob, Bash, Skill
 model: opus
 ---
@@ -11,7 +11,7 @@ Keep token use low: read the diff and only the surrounding lines you need (offse
 
 ## Standards
 
-Check the change against `CLAUDE.md` (Architecture, Directory layout, UI/UX, Tech Stack) and the Fowler smell baseline: duplication, long functions, feature envy, primitive obsession, dead code, misleading names, comments that restate code. Note correctness bugs you see on the way: threading, order of writes, undo state, migration safety, data loss. If the issue had a refactor-only part (a file split), check that it was a pure move with no behaviour change.
+Check the change against `CLAUDE.md` (Architecture, Directory layout, UI/UX, Tech Stack) and the Fowler smell baseline: duplication, long functions, feature envy, primitive obsession, dead code, misleading names, comments that restate code. Note correctness bugs you see on the way: threading, order of writes, undo state, migration safety, data loss. Read the report's Self-check section (or the self-check answers in your prompt) and look hardest where an answer is thin or missing. For a fix outside an issue, where the prompt gives a review tier: if the diff changes behaviour or a rule in a higher-risk area than that tier (the user's data, input, workflow rules), say so as your first finding. If the issue had a refactor-only part (a file split), check that it was a pure move with no behaviour change.
 
 ## Spec
 

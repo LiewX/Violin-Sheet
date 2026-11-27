@@ -28,7 +28,7 @@ The main session is the **orchestrator**: it plans, delegates, reviews and commi
 | Orchestrator (main session) | Opus. At session start, check it is on Opus; if not, ask the user to run `/model opus` and wait |
 | Plan agent | `general-purpose` on Opus (the built-in Plan agent can't write files), told to design only: no code. Writes `handoffs/<N>-design.md` and replies with at most ~150 words plus the path |
 | Implementer | `subagent_type: implementer`, `model` from the issue's `model:` label (`model:opus` → opus, `model:sonnet` → sonnet), fix rounds included (never downgraded to save tokens). One exception: a refactor-only part (see Splitting) runs on sonnet |
-| Reviewer | `subagent_type: reviewer`, `model: opus` |
+| Reviewer | `subagent_type: reviewer`, `model: opus`, except the sonnet tier for small low-risk fixes outside issues (see Small fixes) |
 | Explore agent (finding files and symbols) | Haiku. Never coding; its results are facts (where things are), design decisions stay with Opus. The prompt asks for a reply of at most ~200 words of paths and line numbers |
 | Mockup agent | `general-purpose`, Opus (see Working style → Mockups) |
 
@@ -70,17 +70,27 @@ Issues run one at a time: there is one tablet, and the issues block each other.
 
 **When an implementer is stuck** (the build won't go green, a device check keeps failing, a review round comes back still broken): send it back with specific guidance at most twice. After that, stop the run and tell the user what is blocked. Don't take the issue over.
 
-**After adding or changing an agent type mid-session:** the new definition only loads in the next session (spawning it fails with "Agent type '…' not found", or runs the old one). For the rest of the session, spawn `general-purpose` with the model from the table above (the issue's `model:` label for an implementer, opus for a reviewer), told to read and follow that `.claude/agents/<type>.md`.
+**After adding or changing an agent type mid-session:** the new definition only loads in the next session (spawning it fails with "Agent type '…' not found", or runs the old one). For the rest of the session, spawn `general-purpose` with the model from the table above (the issue's `model:` label for an implementer, the reviewer's tier for a reviewer: opus, or sonnet for a small low-risk fix), told to read and follow that `.claude/agents/<type>.md`.
 
 **When an implementer dies midway** (a usage limit, a crash): compare `git status` and `git diff` with the plan, then resume the same implementer with SendMessage, or spawn a new one told to continue from the current tree with the plan and any report. This is not one of the two retries. If the session itself must stop mid-issue, write `handoffs/<N>-resume.md` (what's done, what's left, the commit steps) first.
 
-**Small fixes outside an issue** (a docs edit, a one-file bug fix, fixes from the user's manual check): if under about 30 lines in one or two files, do them yourself, still with a reviewer before committing, and update the knowledge graph after a code change. Anything bigger becomes a plan and an implementer.
+**Small fixes outside an issue** (a docs edit, a one-file bug fix, fixes from the user's manual check): if under about 30 lines in one or two files, do them yourself; update the knowledge graph after a code change. Anything bigger becomes a plan and an implementer. Issues keep the reviews in step 3. Every change outside an issue (small or planned) is reviewed by risk, not size (workflow idea 64):
+   - **Wording only:** docs, spec phrasing, comments, typos, including in workflow files, as long as no rule or behaviour changes. No reviewer; the orchestrator reads the diff.
+   - **Small and low-risk:** UI text, a test, a pure refactor. One `reviewer` on sonnet, both axes.
+   - **The user's data, input, or a rule:** storage, migrations, scripts that write to the tablet, pen or finger input, or a changed workflow rule (`.claude/`, `docs/agents/`, `CLAUDE.md`). One `reviewer` on Opus, however small.
+
+   The loop:
+   1. **Pick the tier** before starting. A planned fix writes it in its plan as a `## Review` line (tier and a one-line reason); a fix the orchestrator makes itself names it in the reviewer's prompt, or in the commit message when there is no reviewer.
+   2. **Check the diff:** before reviewing, read `git diff --stat`. If it changes behaviour or a rule in a higher-risk area than planned (`core/data`, migrations, `scripts/device.sh` or another tablet-writing script, input handling, a workflow rule), use that higher tier.
+   3. **Review.** When the orchestrator made the fix itself, it answers the implementer's four self-check questions (`.claude/agents/implementer.md` → Self-check) in the reviewer's prompt.
+   4. **If the reviewer reports that the diff belongs to a higher tier,** rerun the review at that tier before fixing anything.
+   5. **Findings** are fixed by whoever made the change: the orchestrator for its own fixes, otherwise the implementer, sent the review file as in the issue loop's step 3. Blockers and should-fix are fixed; a fix round that changes more than wording gets one more review at the same tier. After two rounds still broken, stop and ask the user.
 
 ## Cleanup
 
 When the user asks before ending a session:
 
-1. **Token review.** Run `python -I scripts/agent-tokens.py` (no arguments: it reads this project's most recent session). It prints the main session's context and, per subagent, the starting context, tool output by tool, screenshots read and final context, without any content. Compare each part's final context with its plan's `## Size` estimate. Measure any workflow idea whose status says "measure at next cleanup" against its baseline (ideas 50/51: parts ≤150k, hand-backs under ~20k vs ~60k), then mark it done or reopen it. Then check each `CLAUDE.md` section and each doc agents load against which roles use it. Write the findings into `docs/workflow-ideas.md`, each with a concrete fix. A move into a skill, or any other rule change, is proposed to the user and grilled before it is written. If the script fails or finds no transcripts, say so in the cleanup message and skip this step rather than guess.
+1. **Token review.** Run `python -I scripts/agent-tokens.py` (no arguments: it reads this project's most recent session). It prints the main session's context and, per subagent, the starting context, tool output by tool, screenshots read and final context, without any content. Compare each part's final context with its plan's `## Size` estimate. Measure any workflow idea whose status says "measure at next cleanup" against its baseline (ideas 50/51: parts ≤150k, hand-backs under ~20k vs ~60k), then mark it done or reopen it. List each review's tier and its findings by severity. If a change reviewed at a lower tier (or not at all) later needed a fix that an Opus review would likely have caught, reopen idea 64. Then check each `CLAUDE.md` section and each doc agents load against which roles use it. Write the findings into `docs/workflow-ideas.md`, each with a concrete fix. A move into a skill, or any other rule change, is proposed to the user and grilled before it is written. If the script fails or finds no transcripts, say so in the cleanup message and skip this step rather than guess.
 2. **Workflow ideas.** Add what slowed the orchestration or caused mistakes, each with a concrete fix, and mark earlier ideas **done** or **dropped**. (Implementers' friction is copied in at each issue's commit.)
 3. Update `PROGRESS.md` and the memory.
 

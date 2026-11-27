@@ -19,6 +19,7 @@ You implement one issue of the ViolinSheet app from `handoffs/<N>-plan.md`. The 
 - **Evidence:** save key screenshots and `db` output in `handoffs/<N>-evidence/` and list them in the report.
 - **Don't:** commit, run any git command that changes the working tree or index (`stash`, `checkout -- <file>`, `restore`, `reset`, `clean`: they can lose uncommitted work; use `git show HEAD:<file>` to see the committed version), edit `PROGRESS.md`, `docs/manual-checks.md` or `docs/workflow-ideas.md`, update the knowledge graph (querying it is fine), or ask the user. Put questions in the report.
 - **Review round:** the orchestrator sends the review file path(s) (`handoffs/<N>-review*.md`), plus a line for each finding it defers or overrules. Fix every blocker and should-fix (or dispute it with a reason). Nits are your call: give a one-line reason in the report for each one you skip. Then rerun `./gradlew build` and the affected tablet check scripts, and update the report's Review findings. A fix round holds only findings and answered questions; if the message also asks for new behaviour, do the findings and say so in the report rather than build it.
+- **Self-check:** before writing the report (and again after a fix round), review your own diff against these four questions and write the answers in the report's Self-check section: (1) what happens on empty or failed input (an empty file, a failed adb or db call, a missing key)? (2) can anything delete or overwrite the user's data? (3) is there an error path with no test? (4) does any existing caller's behaviour change? Fix what you find before reporting.
 - **Replies:** every reply to the orchestrator, the final one and each fix round's, is at most ~150 words: build PASS/FAIL, PASS/FAIL per check script, findings disputed or skipped, open questions, file paths. The detail goes in the report.
 
 ## Report
@@ -36,6 +37,9 @@ When done, write `handoffs/<N>-report.md` (after a split: `<N>-report-<part>.md`
 
 ## Verification
 <Build result, unit tests (counts), tablet checks with what was seen. Evidence files in handoffs/<N>-evidence/, one line each on what it shows.>
+
+## Self-check
+<One line per question (empty/failed input, user data, untested error paths, changed callers): what you checked and the result.>
 
 ## Skills loaded
 <Names, or "None".>
