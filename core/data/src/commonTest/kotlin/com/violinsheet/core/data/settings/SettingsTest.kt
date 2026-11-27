@@ -60,6 +60,13 @@ class SettingsTest {
         assertEquals(0xFF000000.toInt(), colour.decode(null))
     }
 
+    @Test fun toggleRoundTripsAndFallsBackToItsDefault() {
+        val toggle = ToggleSetting("ink.toggle", "Ink", "Toggle", default = false)
+        assertEquals(true, toggle.decode(toggle.encode(true)))
+        assertEquals(false, toggle.decode(null))
+        assertEquals(false, toggle.decode("yes"))
+    }
+
     @Test fun unsetSettingReadsItsDefault() = runTest {
         assertEquals("two", SettingsStore(FakeSettingDao(), this).observe(choice("x")).first())
     }

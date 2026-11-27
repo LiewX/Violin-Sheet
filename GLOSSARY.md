@@ -50,6 +50,13 @@ The size at which Symbols are drawn on a Sheet so they match its printed notatio
 An app-wide default that a new Sheet starts from, declared by the feature it belongs to.
 _Avoid_: Preference, config, option
 
+**Palette**:
+A tool's app-wide list of colours shown in the toolbar: its factory colours plus the custom colours saved by drawing with them, edited on the Settings page.
+_Avoid_: Presets (for colours), swatches (for the list)
+
+**Size preset**:
+One of a tool's three app-wide sizes in the toolbar, editable from the Sheet and the Settings page.
+
 ### Modes
 
 **Ink mode**:

@@ -112,12 +112,6 @@ private fun underEraser(a: InkPoint, b: InkPoint, center: Offset, reach: Float):
     return ((-bb - root) / (2 * aa)).coerceIn(0f, 1f) to ((-bb + root) / (2 * aa)).coerceIn(0f, 1f)
 }
 
-private fun distanceSquared(p: InkPoint, c: Offset): Float {
-    val dx = p.x - c.x
-    val dy = p.y - c.y
-    return dx * dx + dy * dy
-}
-
 private fun segmentDistanceSquared(a: InkPoint, b: InkPoint, c: Offset): Float {
     val dx = b.x - a.x
     val dy = b.y - a.y
@@ -140,6 +134,3 @@ private fun MutableList<InkPoint>.addDistinct(point: InkPoint) {
     val last = lastOrNull()
     if (last == null || last.x != point.x || last.y != point.y || last.elapsedMillis != point.elapsedMillis) add(point)
 }
-
-private fun length(points: List<InkPoint>): Float =
-    (1 until points.size).sumOf { i -> sqrt(distanceSquared(points[i], Offset(points[i - 1].x, points[i - 1].y))).toDouble() }.toFloat()

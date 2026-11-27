@@ -42,6 +42,18 @@ data class ChoiceSetting(
     override fun decode(stored: String?) = stored?.takeIf { id -> choices.any { it.id == id } } ?: default
 }
 
+/** On or off, shown as a switch. */
+data class ToggleSetting(
+    override val key: String,
+    override val group: String,
+    override val title: String,
+    override val default: Boolean,
+) : Setting<Boolean> {
+    override fun encode(value: Boolean) = value.toString()
+
+    override fun decode(stored: String?) = stored?.toBooleanStrictOrNull() ?: default
+}
+
 /** A colour (ARGB), shown as swatches of [presets]. */
 data class ColourSetting(
     override val key: String,

@@ -2,6 +2,7 @@ package com.violinsheet.feature.annotation
 
 import com.violinsheet.core.data.settings.ColourSetting
 import com.violinsheet.core.data.settings.SliderSetting
+import com.violinsheet.core.data.settings.ToggleSetting
 
 /** A preset colour with the name screen readers announce. */
 data class NamedColour(val name: String, val argb: Int)
@@ -76,5 +77,13 @@ object InkSettings {
         default = 12f,
     )
 
-    val all = listOf(penColour, penSize, highlighterColour, highlighterSize)
+    /** Off: the lasso selects only strokes wholly inside it, as in Samsung Notes. On: also those mostly inside. */
+    val includePartlyEnclosed = ToggleSetting(
+        key = "ink.lassoIncludePartlyEnclosed",
+        group = "Ink",
+        title = "Include partly enclosed strokes",
+        default = false,
+    )
+
+    val all = listOf(penColour, penSize, highlighterColour, highlighterSize, includePartlyEnclosed)
 }

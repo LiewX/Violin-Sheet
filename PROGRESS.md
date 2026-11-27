@@ -9,8 +9,9 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Sheet import and list (rename, delete with undo bar, backup without PDFs + hash reattach) | Done | #1, #3. A real Google backup/restore is only simulated (PDF files deleted); see `docs/manual-checks.md` |
 | 1. Annotation editing | PDF Page rendering, zoom/pan, page turns, 1-up/2-up layout | Done | #2, #4 |
 | 1. Annotation editing | Ink mode: pen, highlighter, eraser, side-button erase | Done | #6, #8 |
-| 1. Annotation editing | Ink lasso: move, resize, rotate, copy/paste within a Sheet, delete | Not Started | — |
+| 1. Annotation editing | Ink lasso: move, resize, rotate, copy/paste within a Sheet, delete | In Progress | #10 done: lasso (fully inside; optional partly-enclosed switch), tap to select, move/resize/rotate/delete with undo. Copy/paste is #11 |
 | 1. Annotation editing | Colour picker and size sliders | Done | #9: HSV picker and size sliders in a panel above the toolbar; the same picker on the Settings page. Token use to compare with #8 at the next cleanup |
+| 1. Annotation editing | Saved colour palettes and editable size presets | Not Started | #22, after #11 |
 | 1. Annotation editing | Symbols: fingerings | Not Started | — |
 | 1. Annotation editing | Symbols: articulations | Not Started | — |
 | 1. Annotation editing | Symbols: bowings | Not Started | — |
@@ -35,6 +36,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Music data (MusicXML and/or OMR, hidden layer) | Post-V1.0 | Decide with Feature 3 |
 | 1. Annotation editing | Flattened PDF export | Post-V1.0 | — |
 | 1. Annotation editing | Folders and set lists | Post-V1.0 | — |
+| 1. Annotation editing | Per-Sheet and per-Page settings | Post-V1.0 | — |
 | Platform | iPad port (Apple Pencil) | Post-V1.0 | Decide hold-to-erase trigger; recheck Compose `UIKitView` interop |
 | 2. Sheet fixing | Perspective correction, mesh warp, discolour fill | Post-V1.0 | — |
 | 2. Sheet fixing | Crop and enlarge per Page | Post-V1.0 | — |

@@ -7,7 +7,11 @@ import com.violinsheet.core.data.settings.SettingDao
 import com.violinsheet.core.data.settings.SettingValue
 import com.violinsheet.core.data.settings.SettingsStore
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import com.violinsheet.core.ink.DragKind
 import com.violinsheet.core.ink.EraseMode
+import com.violinsheet.core.ink.SelectionFrame
+import com.violinsheet.core.ink.decodeInkPoints
 import com.violinsheet.core.ink.Eraser
 import com.violinsheet.core.ink.InkPoint
 import com.violinsheet.core.ink.InkStroke
@@ -33,6 +37,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -75,10 +80,13 @@ class AnnotationViewModelTest {
             rows.filter { it.id in ids && it.sheetId != sheetId }.map { it.id }
     }
 
-    /** Stored Settings by key; empty means every Setting is at its declared default. */
+    /** Stored Settings by key; empty means every Setting is at its declared default. Writes go to [saved]. */
     private class FakeSettings(val stored: Map<String, String> = emptyMap()) : SettingDao {
+        val saved = mutableListOf<SettingValue>()
         override fun observe(key: String) = flowOf(stored[key])
-        override suspend fun upsert(value: SettingValue) = Unit
+        override suspend fun upsert(value: SettingValue) {
+            saved += value
+        }
     }
 
     private var settingsDao = FakeSettings()
@@ -433,5 +441,237 @@ class AnnotationViewModelTest {
         settle()
         assertEquals("highlighter", dao.rows.single().tool)
         assertEquals(StrokeTool.Highlighter, vm.strokes.value.single().tool)
+    }
+
+    private val pageSize = Size(200f, 300f)
+
+    /** Lines 1000, 2000 and 3000 at y = 0, 50 and 100 on Page 0 (on screen), with the Lasso tool chosen. */
+    private fun TestScope.lassoViewModel(): AnnotationViewModel {
+        val vm = viewModel()
+        settle()
+        vm.onVisiblePages(setOf(0))
+        vm.addStroke(line(1000, y = 0f))
+        vm.addStroke(line(2000, y = 50f))
+        vm.addStroke(line(3000, y = 100f))
+        vm.setTools(vm.tools.value.copy(chosen = ToolChoice.Lasso))
+        settle()
+        return vm
+    }
+
+    /** A rectangular lasso around the middle line (2000). */
+    private val aroundMiddle = listOf(Offset(-10f, 40f), Offset(110f, 40f), Offset(110f, 60f), Offset(-10f, 60f))
+
+    private fun AnnotationViewModel.first(id: Long) = strokes.value.single { it.id == id }.points.first()
+
+    private fun savedFirst(id: Long) = decodeInkPoints(dao.rows.single { it.id == id }.points).first()
+
+    private fun AnnotationViewModel.moveMiddle(by: Offset, cancelled: Boolean = false) {
+        beginDrag(DragKind.Move, Offset(50f, 50f), pageSize)
+        dragTo(Offset(50f, 50f) + by)
+        endDrag(cancelled)
+    }
+
+    @Test fun lassoSelectsTheStrokesMostlyInsideIt() = runTest {
+        val vm = lassoViewModel()
+        vm.addStroke(line(4000, y = 50f, page = 1)) // same spot, other Page
+        vm.lassoDone(0, aroundMiddle)
+        assertEquals(listOf(2000L), vm.selection.value?.ids)
+
+        vm.lassoDone(0, listOf(Offset(150f, 150f), Offset(190f, 150f), Offset(190f, 190f)))
+        assertNull(vm.selection.value)
+    }
+
+    @Test fun selectFramesTheStrokesInkBox() = runTest {
+        val vm = lassoViewModel()
+        vm.select(0, listOf(2000L))
+        assertEquals(SelectionFrame(Offset(50f, 50f), Size(50.5f, 0.5f), 0f), vm.selection.value?.frame)
+    }
+
+    @Test fun moveBakesThePointsInAndKeepsIdsAndOrder() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        vm.beginDrag(DragKind.Move, Offset(50f, 50f), pageSize)
+        vm.dragTo(Offset(60f, 70f))
+        // While dragging only the preview moves.
+        assertEquals(Offset(10f, 20f), vm.selection.value?.preview?.translation)
+        assertEquals(0f, vm.first(2000).x)
+        vm.endDrag(cancelled = false)
+        settle()
+
+        assertEquals(listOf(1000L, 2000L, 3000L), vm.ids())
+        assertEquals(InkPoint(10f, 70f, 0.5f, 0), vm.first(2000))
+        assertEquals(InkPoint(10f, 70f, 0.5f, 0), savedFirst(2000))
+        assertNull(vm.selection.value?.preview)
+        assertEquals(Offset(60f, 70f), vm.selection.value?.frame?.center)
+    }
+
+    @Test fun undoAndRedoOfAMoveRestoreRowsPointsAndFrame() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        vm.moveMiddle(by = Offset(10f, 20f))
+        settle()
+
+        vm.undo()
+        settle()
+        assertEquals(listOf(1000L, 2000L, 3000L), vm.ids())
+        assertEquals(InkPoint(0f, 50f, 0.5f, 0), vm.first(2000))
+        assertEquals(InkPoint(0f, 50f, 0.5f, 0), savedFirst(2000))
+        assertEquals(listOf(2000L), vm.selection.value?.ids)
+        assertEquals(Offset(50f, 50f), vm.selection.value?.frame?.center)
+
+        vm.redo()
+        settle()
+        assertEquals(InkPoint(10f, 70f, 0.5f, 0), vm.first(2000))
+        assertEquals(InkPoint(10f, 70f, 0.5f, 0), savedFirst(2000))
+        assertEquals(Offset(60f, 70f), vm.selection.value?.frame?.center)
+
+        // With another tool chosen, undo doesn't bring a selection back.
+        vm.setTools(vm.tools.value.copy(chosen = ToolChoice.Pen))
+        vm.undo()
+        assertNull(vm.selection.value)
+    }
+
+    @Test fun deletedSelectionComesBackInItsPlaceSelected() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        vm.deleteSelection()
+        settle()
+        assertEquals(listOf(1000L, 3000L), vm.ids())
+        assertEquals(setOf(1000L, 3000L), savedIds())
+        assertNull(vm.selection.value)
+
+        vm.undo()
+        settle()
+        assertEquals(listOf(1000L, 2000L, 3000L), vm.ids())
+        assertEquals(setOf(1000L, 2000L, 3000L), savedIds())
+        assertEquals(listOf(2000L), vm.selection.value?.ids)
+
+        vm.redo()
+        settle()
+        assertEquals(listOf(1000L, 3000L), vm.ids())
+        assertNull(vm.selection.value)
+    }
+
+    @Test fun cancelledDragChangesNothingAndAddsNoUndoStep() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        vm.moveMiddle(by = Offset(10f, 20f), cancelled = true)
+        settle()
+        assertEquals(InkPoint(0f, 50f, 0.5f, 0), vm.first(2000))
+        assertNull(vm.selection.value?.preview)
+
+        // The last step is still drawing line 3000.
+        vm.undo()
+        settle()
+        assertEquals(listOf(1000L, 2000L), vm.ids())
+        assertEquals(InkPoint(0f, 50f, 0.5f, 0), vm.first(2000))
+    }
+
+    @Test fun eraseAndToolSwitchClearTheSelection() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        vm.eraseThrough(Eraser(EraseMode.Stroke, 4f), listOf(Offset(150f, 250f)))
+        assertNull(vm.selection.value)
+
+        vm.lassoDone(0, aroundMiddle)
+        vm.setTools(vm.tools.value.copy(eraser = Eraser(EraseMode.Area, 20f))) // same tool chosen: kept
+        assertEquals(listOf(2000L), vm.selection.value?.ids)
+        vm.setTools(vm.tools.value.copy(chosen = ToolChoice.Pen))
+        assertNull(vm.selection.value)
+    }
+
+    @Test fun aSelectionEndsWhenItsPageLeavesTheScreen() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        vm.onVisiblePages(setOf(0, 1)) // zoom or 2-up: Page 0 still shown
+        assertEquals(listOf(2000L), vm.selection.value?.ids)
+        vm.onVisiblePages(setOf(1, 2))
+        assertNull(vm.selection.value)
+    }
+
+    @Test fun undoAndRedoDoNotSelectStrokesOnAPageOffScreen() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        vm.moveMiddle(by = Offset(10f, 20f))
+        settle()
+        vm.onVisiblePages(setOf(1))
+
+        vm.undo()
+        settle()
+        assertEquals(InkPoint(0f, 50f, 0.5f, 0), vm.first(2000))
+        assertNull(vm.selection.value)
+        vm.redo()
+        settle()
+        assertEquals(InkPoint(10f, 70f, 0.5f, 0), vm.first(2000))
+        assertNull(vm.selection.value)
+    }
+
+    @Test fun undoingADeleteKeepsTheTurnedFrame() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        // A quarter turn about the centre (50, 50): from straight above it to straight right of it.
+        vm.beginDrag(DragKind.Rotate, Offset(50f, 0f), pageSize)
+        vm.dragTo(Offset(100f, 50f))
+        vm.endDrag(cancelled = false)
+        settle()
+        val turned = vm.selection.value?.frame
+        assertEquals(90f, turned?.angleDegrees)
+
+        vm.deleteSelection()
+        vm.undo()
+        settle()
+        assertEquals(turned, vm.selection.value?.frame)
+    }
+
+    @Test fun resizeGrabbedOffTheCornerDoesNotJump() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        val corner = vm.selection.value!!.frame.corners()[2]
+        // Grabbed 5 pt off the corner (the padded frame, the handle's reach); not moved yet.
+        vm.beginDrag(DragKind.Resize(2), corner + Offset(5f, 5f), pageSize)
+        vm.dragTo(corner + Offset(5f, 5f))
+        assertEquals(1f, vm.selection.value!!.preview!!.scale, 0.0001f)
+    }
+
+    /** A lasso around 95% of the middle line (2000): it misses x 0 to 5. */
+    private val aroundMostOfMiddle = listOf(Offset(5f, 40f), Offset(110f, 40f), Offset(110f, 60f), Offset(5f, 60f))
+
+    @Test fun lassoFollowsTheIncludePartlyEnclosedSettingAndTheToolbarSavesIt() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMostOfMiddle)
+        assertNull(vm.selection.value)
+
+        vm.setTools(vm.tools.value.copy(includePartlyEnclosed = true))
+        settle()
+        assertEquals(listOf(SettingValue(InkSettings.includePartlyEnclosed.key, "true")), settingsDao.saved)
+        vm.lassoDone(0, aroundMostOfMiddle)
+        assertEquals(listOf(2000L), vm.selection.value?.ids)
+    }
+
+    @Test fun storedIncludePartlyEnclosedSettingIsReadAtOpen() = runTest {
+        settingsDao = FakeSettings(mapOf(InkSettings.includePartlyEnclosed.key to "true"))
+        val vm = lassoViewModel()
+        assertEquals(true, vm.tools.value.includePartlyEnclosed)
+        vm.lassoDone(0, aroundMostOfMiddle)
+        assertEquals(listOf(2000L), vm.selection.value?.ids)
+    }
+
+    @Test fun aTapSelectsTheStrokeUnderItAloneAndATapOnEmptySpaceClears() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, listOf(Offset(-10f, -10f), Offset(110f, -10f), Offset(110f, 110f), Offset(-10f, 110f)))
+        assertEquals(listOf(1000L, 2000L, 3000L), vm.selection.value?.ids)
+
+        vm.tapAt(0, Offset(30f, 51f), slop = 2f)
+        assertEquals(listOf(2000L), vm.selection.value?.ids)
+        vm.tapAt(0, Offset(30f, 25f), slop = 2f)
+        assertNull(vm.selection.value)
+    }
+
+    @Test fun undoingADrawnStrokeClearsTheSelection() = runTest {
+        val vm = lassoViewModel()
+        vm.lassoDone(0, aroundMiddle)
+        vm.undo()
+        assertEquals(listOf(1000L, 2000L), vm.ids())
+        assertNull(vm.selection.value)
     }
 }

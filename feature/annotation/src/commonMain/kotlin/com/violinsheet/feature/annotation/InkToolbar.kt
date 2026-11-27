@@ -20,6 +20,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,18 +43,26 @@ import com.violinsheet.core.ink.Eraser
 import com.violinsheet.feature.settings.ColourPicker
 import com.violinsheet.feature.settings.CustomColourBrush
 import com.violinsheet.feature.settings.StepSlider
+import com.violinsheet.feature.settings.SwitchRow
 import com.violinsheet.feature.settings.formatPoints
 
 /** What the toolbar's Undo and Redo buttons do, and whether each has anything to do. */
 class UndoControls(val canUndo: Boolean, val canRedo: Boolean, val onUndo: () -> Unit, val onRedo: () -> Unit)
 
+/** What the Lasso tool's buttons do, and whether there is a selection for them to act on. */
+data class LassoControls(val hasSelection: Boolean, val onDelete: () -> Unit)
+
 /**
- * The slim palette at the bottom edge: Undo and Redo, the tool switch (Pen, Highlighter, Eraser), then the chosen
- * tool's presets. No dialogs (CLAUDE.md: UI/UX). [saveFailed] shows a warning that the last change wasn't saved.
+ * The slim palette at the bottom edge: Undo and Redo, the tool switch (Pen, Highlighter, Eraser, Lasso), then the chosen
+ * tool's presets (the Lasso's actions). No dialogs (CLAUDE.md: UI/UX). [saveFailed] shows a warning that the last change wasn't saved.
  */
 @Composable
-fun InkToolbar(tools: InkTools, onTools: (InkTools) -> Unit, undo: UndoControls, saveFailed: Boolean = false) {
+fun InkToolbar(tools: InkTools, onTools: (InkTools) -> Unit, undo: UndoControls, lasso: LassoControls, saveFailed: Boolean = false) {
     var panelOpen by remember { mutableStateOf(false) }
+    // The Lasso has no colour or size: no "Colour and size" toggle. Its panel (the selection rule) opens by tapping the
+    // Lasso tool again. Going to or from the Lasso closes whichever panel was open.
+    val lassoChosen = tools.chosen == ToolChoice.Lasso
+    LaunchedEffect(lassoChosen) { panelOpen = false }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (panelOpen) ToolPanel(tools, onTools)
         Surface(shape = RoundedCornerShape(24.dp), tonalElevation = 3.dp, shadowElevation = 3.dp) {
@@ -72,7 +81,12 @@ fun InkToolbar(tools: InkTools, onTools: (InkTools) -> Unit, undo: UndoControls,
                 ToolbarDivider()
                 if (saveFailed) Text("Last change not saved", color = MaterialTheme.colorScheme.error)
                 ToolChoice.entries.forEach { choice ->
-                    Choice(selected = tools.chosen == choice, label = choice.name, onClick = { onTools(tools.copy(chosen = choice)) }) {
+                    val onClick = if (choice == ToolChoice.Lasso && lassoChosen) {
+                        { panelOpen = !panelOpen }
+                    } else {
+                        { onTools(tools.copy(chosen = choice)) }
+                    }
+                    Choice(selected = tools.chosen == choice, label = choice.name, onClick = onClick) {
                         Icon(toolIcon(choice), contentDescription = null)
                     }
                 }
@@ -83,10 +97,15 @@ fun InkToolbar(tools: InkTools, onTools: (InkTools) -> Unit, undo: UndoControls,
                     ToolChoice.Highlighter ->
                         DrawPresets(tools.highlighter, "highlighter", HIGHLIGHTER_COLOURS, HIGHLIGHTER_SIZES, openPanel) { onTools(tools.copy(highlighter = it)) }
                     ToolChoice.Eraser -> EraserPresets(tools.eraser) { onTools(tools.copy(eraser = it)) }
+                    ToolChoice.Lasso -> IconButton(onClick = lasso.onDelete, enabled = lasso.hasSelection, modifier = Modifier.size(40.dp)) {
+                        Icon(DeleteIcon, contentDescription = "Delete selection")
+                    }
                 }
-                ToolbarDivider()
-                Choice(selected = panelOpen, label = "Colour and size", onClick = { panelOpen = !panelOpen }) {
-                    Icon(TuneIcon, contentDescription = null)
+                if (!lassoChosen) {
+                    ToolbarDivider()
+                    Choice(selected = panelOpen, label = "Colour and size", onClick = { panelOpen = !panelOpen }) {
+                        Icon(TuneIcon, contentDescription = null)
+                    }
                 }
             }
         }
@@ -103,6 +122,11 @@ private fun ToolPanel(tools: InkTools, onTools: (InkTools) -> Unit) {
                 ToolChoice.Highlighter ->
                     DrawPanel(tools.highlighter, InkSettings.highlighterSize.range, InkSettings.highlighterSize.step) { onTools(tools.copy(highlighter = it)) }
                 ToolChoice.Eraser -> SizeSlider(tools.eraser.size, ERASER_SIZE_RANGE, ERASER_SIZE_STEP) { onTools(tools.copy(eraser = tools.eraser.copy(size = it))) }
+                ToolChoice.Lasso -> SwitchRow(
+                    InkSettings.includePartlyEnclosed.title,
+                    tools.includePartlyEnclosed,
+                    modifier = Modifier.width(320.dp),
+                ) { onTools(tools.copy(includePartlyEnclosed = it)) }
             }
         }
     }
@@ -203,6 +227,7 @@ private fun toolIcon(choice: ToolChoice) = when (choice) {
     ToolChoice.Pen -> PenIcon
     ToolChoice.Highlighter -> HighlighterIcon
     ToolChoice.Eraser -> EraserIcon
+    ToolChoice.Lasso -> LassoIcon
 }
 
 private fun icon(name: String, path: String) = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
@@ -230,4 +255,17 @@ private val EraserIcon = icon(
     "M16.24,3.56L21.19,8.5C21.97,9.29 21.97,10.55 21.19,11.34L12,20.53C10.44,22.09 7.91,22.09 6.34,20.53L2.81,17" +
         "C2.03,16.22 2.03,14.95 2.81,14.17L13.41,3.56C14.2,2.78 15.46,2.78 16.24,3.56ZM4.22,15.58L7.76,19.11" +
         "C8.54,19.9 9.8,19.9 10.59,19.11L14.12,15.58L9.17,10.63L4.22,15.58Z",
+)
+
+// A lasso loop with its tail.
+private val LassoIcon = icon(
+    "Lasso",
+    "M3,9a9,6 0 1,0 18,0a9,6 0 1,0 -18,0zM5,9a7,4 0 1,0 14,0a7,4 0 1,0 -14,0z" +
+        "M6.3,14.1L8.2,14.6L7.2,21L5.3,20.6Z",
+)
+
+// Material "delete".
+private val DeleteIcon = icon(
+    "Delete",
+    "M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V7H6v12zM19,4h-3.5l-1,-1h-5l-1,1H5v2h14V4z",
 )

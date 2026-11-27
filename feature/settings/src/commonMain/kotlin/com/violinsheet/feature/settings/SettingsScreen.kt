@@ -44,6 +44,11 @@ import com.violinsheet.core.data.settings.ColourSetting
 import com.violinsheet.core.data.settings.SettingsRegistry
 import com.violinsheet.core.data.settings.SettingsStore
 import com.violinsheet.core.data.settings.SliderSetting
+import com.violinsheet.core.data.settings.ToggleSetting
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 
 /** The Settings page, built from the declarations in [registry]: one section per feature, one control per Setting. */
 @OptIn(ExperimentalMaterial3Api::class) // TopAppBar
@@ -66,11 +71,12 @@ fun SettingsScreen(registry: SettingsRegistry, store: SettingsStore, onBack: () 
                 }
                 settings.forEach { setting ->
                     item(key = "setting:${setting.key}") {
-                        // The type picks the control. A toggle control comes with the first toggle Setting.
+                        // The type picks the control.
                         when (setting) {
                             is ChoiceSetting -> ChoiceRow(setting, store)
                             is ColourSetting -> ColourRow(setting, store)
                             is SliderSetting -> SliderRow(setting, store)
+                            is ToggleSetting -> ToggleRow(setting, store)
                         }
                     }
                 }
@@ -96,6 +102,33 @@ private fun ChoiceRow(setting: ChoiceSetting, store: SettingsStore) {
                 ) { Text(choice.label) }
             }
         }
+    }
+}
+
+@Composable
+private fun ToggleRow(setting: ToggleSetting, store: SettingsStore) {
+    // Off and disabled until the stored value loads, rather than flashing the default.
+    val value by remember(setting) { store.observe(setting) }.collectAsState(null)
+    SwitchRow(setting.title, value ?: false, enabled = value != null) { store.set(setting, it) }
+}
+
+/** A labelled switch; the whole row toggles it. Shared with the toolbar's panel. */
+@Composable
+fun SwitchRow(
+    title: String,
+    checked: Boolean,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    onChecked: (Boolean) -> Unit,
+) {
+    Row(
+        modifier
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChecked)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }
 

@@ -25,7 +25,7 @@ Mark up a Sheet with the pen. Printed-look edits should look like they were prin
 - A new Sheet is named after the file, without ".pdf". Importing the same PDF again makes a separate Sheet with its own Annotations, named "\<name\> (2)", unless a Sheet with that file is waiting for its PDF after a restore (see backup below).
 - Home screen: a flat list of Sheets with rename and delete. Delete shows an "Undo" bar for about 10 seconds before the Sheet and its Annotations are removed.
 - Sheet records (name, file hash, per-Sheet choices), Annotations and Settings are covered by Android's built-in backup. Imported PDFs are not (the backup is capped at 25 MB per app). After a restore, a Sheet whose PDF is missing shows "PDF missing, re-import"; re-importing the same file, recognised by a hash of its contents, reattaches its Annotations. Re-importing from one Sheet's "PDF missing" prompt fixes that Sheet; a normal import from the home screen fixes every missing Sheet with that hash instead of creating a new Sheet.
-- Layout follows rotation: one Page in portrait, two Pages side by side in landscape. In landscape a turn advances two Pages; a per-Sheet "advance by one" toggle makes it advance one.
+- Layout follows rotation: one Page in portrait, two Pages side by side in landscape. In landscape a turn advances two Pages, or one if the Reading Setting says so. V1.0 has no per-Sheet toggle for it; per-Sheet (and per-Page) settings are Post-V1.0.
 - The next Page (or spread) is pre-rendered so page turns are instant.
 - The **pen** draws and edits. A hand resting on the screen while the pen is near is a palm and does nothing. **Fingers** only navigate: swipe or tap the edge to turn the page, pinch to zoom, tap a Link to open it. When zoomed in, a swipe pans; an edge tap, or a deliberate swipe past the Page edge (starting with the edge already on screen), turns the page. A turn keeps the zoom and its height on the Page and lands on the opposite side: the left edge going forward, the right edge going back. A rotation returns to fit.
 
@@ -39,23 +39,27 @@ Freehand Ink, kept as drawn.
 
 | Tool | Colours | Size |
 |---|---|---|
-| Pen | Presets black, blue, red, green + custom colour picker | Presets + slider, 0.5–10 pt |
-| Highlighter | Presets yellow, green, pink + custom colour picker | Presets + slider, 4–30 pt |
-| Eraser | — (area and stroke modes; removes Ink only) | Presets + slider, 2–40 pt |
+| Pen | Palette (starts black, blue, red, green) + custom colour picker | 3 size presets + slider, 0.5–10 pt |
+| Highlighter | Palette (starts yellow, green, pink) + custom colour picker | 3 size presets + slider, 4–30 pt |
+| Eraser | — (area and stroke modes; removes Ink only) | 3 size presets + slider, 2–40 pt |
 | Lasso | — | — |
 
 - Sizes are measured on the Page, not the screen, so a stroke keeps its thickness relative to the notes at any zoom.
 - **Holding the S Pen side button** erases while held; releasing it returns to the previous tool. On iPad the trigger is decided at the port (the Apple Pencil has no side button).
-- The custom colour picker opens in a panel above the toolbar, never a dialog. One button at the end of the toolbar opens and closes the panel; it stays open while drawing, and switching tool shows that tool's controls in it. The panel holds the picker (a saturation/brightness square and a hue strip) and the size slider; for the eraser, only the slider.
+- **The panel** above the toolbar (never a dialog) holds the custom colour picker (a saturation/brightness square and a hue strip, with the tool's factory colours under it) and the size slider; for the eraser, only the slider. It opens from the "Colour and size" button at the end of the toolbar, by tapping the selected colour, or by tapping the selected size preset. Switching tool shows that tool's controls in it. Any touch outside the panel closes it and still does its job (a stroke draws, a toolbar button works, a swipe turns the Page).
+- **Palettes:** the pen and the highlighter each have one app-wide palette, kept across Sheets and restarts. A colour from the picker joins its tool's palette the first time a stroke is drawn with it (an exact duplicate isn't added); picking alone saves nothing. Changing a colour loaded from a swatch makes a new colour and never edits the swatch. The toolbar shows about five swatches and scrolls sideways beyond that, with an edge fade; the custom swatch stays fixed at the end.
 - A custom highlighter colour keeps the highlighter's translucency: the picker sets the hue, not the opacity.
+- **Size presets** (three per tool, pen, highlighter and eraser) are app-wide and editable. The panel opened by tapping the selected size preset edits that preset (labelled, e.g. "Editing: small preset"), and the presets re-sort small to large on release. Opened any other way, the slider sets a free size for this Sheet only; no preset is selected and nothing is saved.
 
-**Lasso:** circle strokes with the pen; a stroke is selected if most of it is inside the lasso. The selection can be:
+**Lasso:** circle strokes with the pen; as in Samsung Notes, a stroke is selected only if it is fully inside the lasso. An "Include partly enclosed strokes" switch (off by default, app-wide) also selects strokes with most of their length inside. The switch is in the panel above the toolbar, opened by tapping the Lasso tool while it is selected. Tapping a stroke with the Lasso tool selects that stroke alone; tapping empty space clears the selection. There is no rectangle selection in V1.0. The selection can be:
 
 - **moved** by dragging,
-- **resized** with corner handles (stroke thickness scales with it),
-- **rotated** with a rotate handle (free, snapping at 0°, 90° and 180°),
+- **resized** with corner handles, keeping its proportions (stroke thickness scales with it),
+- **rotated** with a rotate handle (free, snapping at every right angle: 0°, 90°, 180° and 270°),
 - **copied** and **pasted** on any Page of the same Sheet, at the same position and size in Page units, already selected. Strokes that would fall off the Page are moved inside its edge. Pasting into another Sheet is Post-V1.0.
 - **deleted** from the toolbar.
+
+A move, resize or rotate never takes strokes off the Page: the selection stops at the Page edge. A selection is a stroke's whole Ink, highlighter strokes included. Undoing or redoing a lasso action leaves its strokes selected, so the user can try again straight away.
 
 ### Edit mode
 
@@ -78,7 +82,7 @@ Text dynamics ("cresc.", "dim.", "subito") are written as Ink or a Text box.
 
 **Eraser:** an Edit mode eraser removes a whole Symbol when it touches any part of it. It never removes Covers (select and delete those), and it has no area mode.
 
-**Colour:** every Symbol starts in the default Symbol colour Setting (black unless changed), with black and blue presets and the custom colour picker.
+**Colour:** every Symbol starts in the default Symbol colour Setting (black unless changed), with a palette starting black and blue (app-wide, saved and edited like the Ink palettes) and the custom colour picker.
 
 **Size:** the Symbol scale is detected per Page from the staff-line spacing. A per-Sheet slider adjusts it, and a single Symbol can be resized. Pages with no detectable staff (title pages, bad scans) use a standard size.
 
@@ -105,13 +109,13 @@ Typed, printed-look text in Text boxes.
 
 ### Settings
 
-A full page opened from a gear icon on the home screen. It holds app-wide Settings: the defaults every Sheet starts with. A change in a Sheet's toolbar lasts only while that Sheet is open, and per-Sheet choices (layer toggles, "advance by one", Symbol scale slider) stay in the Sheet. The eraser has no Setting: its last mode and size carry over to the next Sheet while the app runs.
+A full page opened from a gear icon on the home screen. It holds app-wide Settings: the defaults every Sheet starts with. A change of the chosen tool, colour or size in a Sheet's toolbar lasts only while that Sheet is open (palettes, size presets and the lasso switch are app-wide and saved at once), and per-Sheet choices (layer toggles, Symbol scale slider) stay in the Sheet. The eraser has no Setting: its last mode and size carry over to the next Sheet while the app runs.
 
-- Each feature declares its own Settings (name, type, default). The page is built from those declarations, grouped by feature, and the type picks the control (toggle, slider, choice, colour). A colour control shows its presets and the same custom colour picker as the toolbar.
+- Each feature declares its own Settings (name, type, default). The page is built from those declarations, grouped by feature, and the type picks the control (toggle, slider, choice, colour). A colour control shows its palette and the same custom colour picker as the toolbar.
 - Changes are saved instantly and covered by Android backup. There is no user-editable config file.
 - V1.0 Settings:
   - **Reading:** landscape turns advance two Pages or one.
-  - **Ink:** default pen colour and size; default highlighter colour and size.
+  - **Ink:** default pen colour and size; default highlighter colour and size; "Include partly enclosed strokes" for the lasso. The pen and highlighter palettes are edited here: an Edit toggle puts × on each swatch, hold and drag reorders, the custom swatch opens the picker with an **Add** button, each palette keeps at least one colour, deleting the default colour makes the first colour left the default, and a deletion shows an Undo bar. The size presets of the pen, highlighter and eraser are edited here too. Palettes and size presets each have "Restore defaults", which brings back the factory values (and keeps saved colours). Strokes already drawn keep their colour whatever is deleted.
   - **Edit:** default Symbol colour.
   - **Text:** default font (italic or regular).
   - **Links:** ask "Open \<site\>?" before opening (on by default), or open straight away.
@@ -119,6 +123,7 @@ A full page opened from a gear icon on the home screen. It holds app-wide Settin
 ### Post-V1.0
 
 - Export and import of Settings.
+- Per-Sheet settings (including per-Page ones) that override the app-wide Settings, such as advancing by one Page in landscape.
 - **Sharps/flats/naturals** as Symbols, with spacing adjustment. Making room may need notes or barlines moved, which needs the music data below.
 - Pasting Ink into another Sheet.
 - **Handwriting to Symbols:** write a marking by hand and have it converted to a printed-look Symbol, possibly using a small on-device model.

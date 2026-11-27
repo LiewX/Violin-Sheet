@@ -21,6 +21,11 @@ import com.violinsheet.feature.settings.SettingsScreen
 import com.violinsheet.feature.annotation.AnnotationViewModel
 import com.violinsheet.feature.annotation.InkToolbar
 import com.violinsheet.feature.annotation.UndoControls
+import com.violinsheet.feature.annotation.LassoControls
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import com.violinsheet.core.ink.InkLayer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
@@ -77,13 +82,29 @@ class MainActivity : ComponentActivity() {
                         val saveFailed by annotations.saveFailed.collectAsState()
                         val canUndo by annotations.canUndo.collectAsState()
                         val canRedo by annotations.canRedo.collectAsState()
+                        // Only whether there is a selection, so the toolbar doesn't recompose on every drag event.
+                        val hasSelection by remember(annotations) { annotations.selection.map { it != null }.distinctUntilChanged() }
+                            .collectAsState(initial = false)
+                        val selectionColour = MaterialTheme.colorScheme.primary
                         SheetScreen(
                             viewModel,
                             overlay = { placements ->
-                                InkLayer(placements, strokes, tools.current, tools.eraser, annotations::addStroke, annotations, Modifier.fillMaxSize())
+                                val selection by annotations.selection.collectAsState()
+                                val shownPages = remember(placements) { placements.mapTo(HashSet()) { it.pageIndex } }
+                                LaunchedEffect(shownPages) { annotations.onVisiblePages(shownPages) }
+                                InkLayer(
+                                    placements, strokes, tools.current, tools.eraser, annotations::addStroke, annotations,
+                                    selection, annotations, selectionColour, Modifier.fillMaxSize(),
+                                )
                             },
                             toolbar = {
-                                InkToolbar(tools, annotations::setTools, UndoControls(canUndo, canRedo, annotations::undo, annotations::redo), saveFailed)
+                                InkToolbar(
+                                    tools,
+                                    annotations::setTools,
+                                    UndoControls(canUndo, canRedo, annotations::undo, annotations::redo),
+                                    LassoControls(hasSelection, annotations::deleteSelection),
+                                    saveFailed,
+                                )
                             },
                         )
                     }

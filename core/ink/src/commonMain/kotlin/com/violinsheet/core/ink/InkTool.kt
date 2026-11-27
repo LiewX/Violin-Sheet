@@ -9,6 +9,9 @@ data class DrawTool(val tool: StrokeTool, val colour: Int, val size: Float) : In
 /** Erases Ink with a circle [size] Page points across. */
 data class Eraser(val mode: EraseMode, val size: Float) : InkTool
 
+/** Circles strokes to select them, then moves, resizes, rotates or deletes the selection (LassoInput). */
+data object Lasso : InkTool
+
 enum class EraseMode {
     /** Any stroke the eraser touches goes whole. */
     Stroke,
