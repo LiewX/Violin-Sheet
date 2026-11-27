@@ -18,4 +18,7 @@ interface SettingDao {
 
     @Upsert
     suspend fun upsert(value: SettingValue)
+
+    @Query("DELETE FROM SettingValue WHERE `key` = :key")
+    suspend fun delete(key: String)
 }

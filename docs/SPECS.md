@@ -84,7 +84,7 @@ Text dynamics ("cresc.", "dim.", "subito") are written as Ink or a Text box.
 
 **Eraser:** an Edit mode eraser removes a whole Symbol when it touches any part of it. It never removes Covers (select and delete those), and it has no area mode.
 
-**Colour:** every Symbol starts in the default Symbol colour Setting (black unless changed), with a palette starting black and blue (app-wide, saved and edited like the Ink palettes) and the custom colour picker.
+**Colour:** every Symbol starts in the Symbol palette's first colour, as Ink does (no separate default to set). The palette starts black and blue (app-wide, saved and edited like the Ink palettes), with the custom colour picker.
 
 **Size:** the Symbol scale is detected per Page from the staff-line spacing. A per-Sheet slider adjusts it, and a single Symbol can be resized. Pages with no detectable staff (title pages, bad scans) use a standard size.
 
@@ -113,12 +113,12 @@ Typed, printed-look text in Text boxes.
 
 A full page opened from a gear icon on the home screen. It holds app-wide Settings: the defaults every Sheet starts with. A change of the chosen tool, colour or size in a Sheet's toolbar lasts only while that Sheet is open (palettes, size presets and the lasso switch are app-wide and saved at once), and per-Sheet choices (layer toggles, Symbol scale slider) stay in the Sheet. The eraser has no Setting: its last mode and size carry over to the next Sheet while the app runs.
 
-- Each feature declares its own Settings (name, type, default). The page is built from those declarations, grouped by feature, and the type picks the control (toggle, slider, choice, colour). A colour control shows its palette and the same custom colour picker as the toolbar.
+- Each feature declares its own Settings (name, type, default). The page is built from those declarations, grouped by feature, and the type picks the control (toggle, slider, choice, palette, size presets). A palette control shows its colours and the same custom colour picker as the toolbar.
 - Changes are saved instantly and covered by Android backup. There is no user-editable config file.
 - V1.0 Settings:
   - **Reading:** landscape turns advance two Pages or one.
-  - **Ink:** default pen colour and size; default highlighter colour and size; "Include partly enclosed strokes" for the lasso. The pen and highlighter palettes are edited here: an Edit toggle puts × on each swatch, hold and drag reorders, **+ Add colour** opens the same picker with Cancel and Save, tapping a swatch edits it the same way, each palette keeps at least one colour, deleting the default colour makes the first colour left the default, and a deletion shows an Undo bar. The size presets of the pen, highlighter and eraser are edited here too, each shown with a stroke preview at its size, and they re-sort small to large on release. Palettes and size presets each have "Restore defaults", which brings back the factory values (and keeps saved colours). Strokes already drawn keep their colour whatever is deleted.
-  - **Edit:** default Symbol colour.
+  - **Ink:** the pen and highlighter palettes, the size presets, and "Include partly enclosed strokes" for the lasso. A Sheet opens with the pen and highlighter on their palette's first colour and their middle size preset; there is no separate default to set. The palettes are edited here without an edit mode: tapping a swatch opens its colour panel with Delete, Cancel and Save (the last colour left has no Delete), hold and drag reorders (dragging a colour to the front makes Sheets start with it), and **+ Add colour** opens the same picker with Cancel and Save. Each palette keeps at least one colour, and a deletion shows an Undo bar with the deleted colour's swatch. The hint under each palette reads "Tap a colour to edit or delete it; hold and drag to reorder." The size presets of the pen, highlighter and eraser are edited here too, each shown with a stroke preview at its size; tapping one opens its slider, and they re-sort small to large on release. One "Restore default palettes and presets" button brings back the factory values (and keeps saved colours). Strokes already drawn keep their colour whatever is deleted.
+  - **Edit:** the Symbol palette, edited like the Ink palettes (its first colour is the one new Symbols start in).
   - **Text:** default font (italic or regular).
   - **Links:** ask "Open \<site\>?" before opening (on by default), or open straight away.
 

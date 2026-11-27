@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import com.violinsheet.feature.annotation.retireInkDefaults
 import com.violinsheet.core.data.AndroidSheetPdfStore
 import com.violinsheet.core.data.SheetImporter
 import com.violinsheet.core.data.SheetRepository
@@ -24,11 +25,17 @@ class ViolinSheetApp : Application() {
     val appScope = CoroutineScope(
         SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, e -> Log.e("ViolinSheet", "Background save failed", e) },
     )
-    val settingsStore by lazy { SettingsStore(database.settingDao(), appScope) }
+    /** One-time migrations of stored Settings run before any read or write; each does nothing once done. */
+    val settingsStore by lazy { SettingsStore(database.settingDao(), appScope, listOf(::retireInkDefaults)) }
 
     /** Every feature's Settings. A feature with Settings adds its list here once; the page picks up the rest. */
     val eraserMemory = EraserMemory()
     val settingsRegistry by lazy { SettingsRegistry(listOf(ViewerSettings.all, InkSettings.all)) }
     val inkRepository by lazy { InkRepository(database.inkDao(), appScope) }
     val sheetImporter by lazy { SheetImporter(this, sheetRepository) }
+
+    override fun onCreate() {
+        super.onCreate()
+        settingsStore // starts the Settings migrations at launch rather than at the first read
+    }
 }

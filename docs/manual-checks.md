@@ -71,3 +71,22 @@ All checks for #2–#6, and the fixes after the first check (palm rest, zoomed t
 - [ ] Side button pressed mid-stroke across Pages: the stroke finishes as drawn, then splits.
 - [ ] Lasso a part on one Page: only that part is selected.
 - [ ] A highlighter stroke across two Pages looks continuous at the edge.
+
+## #22 Saved colour palettes and editable size presets
+
+- [ ] Palm on the page while dragging a swatch (Settings): the swatch is neither dropped nor duplicated; a second pointer on another swatch does nothing.
+- [ ] Rest a palm on the screen while the pen moves in the colour picker: the panel stays open (the palm is a second pointer). A palm that lands *first* outside the panel does close it.
+- [ ] Settings → Pen palette: a short S Pen press on a swatch opens its panel and doesn't start a drag; hold then drag reorders, with the pen and with a finger.
+- [ ] A hold on a swatch released without moving opens the panel (the tap still fires). Fine, or should a hold never open it?
+- [ ] Drag the toolbar palette sideways with the S Pen and with a finger: it scrolls. A pen tap on a swatch still selects it.
+- [ ] With the picker open, turn the Page with a finger flick: the panel closes, the unsaved colour is discarded, and the Page turns.
+- [ ] Highlighter: + Add colour and editing keep the colour translucent; a new highlighter stroke still reads as a highlighter.
+- [ ] The toolbar palette's edge fade looks right at both ends, and the last swatch isn't visibly clipped.
+- [ ] The colour panel looks compact next to the mockup.
+- [ ] Tapping +, the selected swatch, or the selected preset a second time closes its panel.
+- [ ] The Undo bar's swatch is easy to see against the dark bar; its text reads "Colour deleted from the pen palette"; Undo is easy to hit (about 10 s).
+- [ ] Delete in the swatch panel is red and far enough from Save not to be hit by mistake.
+- [ ] The preset previews read clearly at each size: the pen line, the highlighter band, the eraser circle.
+- [ ] TalkBack reads the toolbar's swatches and presets as "selected".
+- [ ] Restore default palettes and presets asks no confirmation. Is a one-tap restore OK?
+- [ ] After the update, a Sheet opens with the pen on the first pen palette colour and the middle size; dragging a colour to the front in Settings changes what the next Sheet starts with.

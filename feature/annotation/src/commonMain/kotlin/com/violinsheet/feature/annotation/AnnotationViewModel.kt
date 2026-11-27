@@ -8,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import com.violinsheet.core.data.ink.InkRepository
 import com.violinsheet.core.data.settings.SettingsStore
 import com.violinsheet.core.ink.DragKind
-import com.violinsheet.core.ink.DrawTool
 import com.violinsheet.core.ink.EraseInput
 import com.violinsheet.core.ink.EraseMode
 import com.violinsheet.core.ink.Eraser
@@ -16,18 +15,11 @@ import com.violinsheet.core.ink.InkStroke
 import com.violinsheet.core.ink.LassoInput
 import com.violinsheet.core.ink.Selection
 import com.violinsheet.core.ink.SelectionFrame
-import com.violinsheet.core.ink.StrokeTool
 import com.violinsheet.core.ink.cutBy
 import com.violinsheet.core.ink.eraserPath
-import com.violinsheet.core.ink.inkBounds
-import com.violinsheet.core.ink.lassoSelects
 import com.violinsheet.core.ink.mayReach
-import com.violinsheet.core.ink.move
 import com.violinsheet.core.ink.pieceIds
 import com.violinsheet.core.ink.pointBounds
-import com.violinsheet.core.ink.resize
-import com.violinsheet.core.ink.rotate
-import com.violinsheet.core.ink.strokeAt
 import com.violinsheet.core.ink.strokeIds
 import com.violinsheet.core.ink.touchedBy
 import kotlinx.coroutines.CancellationException
@@ -35,7 +27,6 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -62,28 +53,20 @@ class AnnotationViewModel(
     val canUndo: StateFlow<Boolean> = history.canUndo
     val canRedo: StateFlow<Boolean> = history.canRedo
 
-    private val _tools = MutableStateFlow(
-        InkTools(
-            ToolChoice.Pen,
-            DrawTool(StrokeTool.Pen, InkSettings.penColour.default, InkSettings.penSize.default),
-            DrawTool(StrokeTool.Highlighter, InkSettings.highlighterColour.default, InkSettings.highlighterSize.default),
-            eraserMemory.eraser,
-        ),
-    )
+    private val toolsState = InkToolsState(settings, eraserMemory, viewModelScope)
 
-    /**
-     * Pen and highlighter start from the Ink Settings, and a toolbar change lasts only while this Sheet is open (SPECS:
-     * Settings). The eraser has no Setting: its mode and size carry over to the next Sheet while the app runs.
-     */
-    val tools: StateFlow<InkTools> = _tools.asStateFlow()
-    private var penChosen = false
-    private var highlighterChosen = false
-    private var partlyChosen = false
+    /** The toolbar's choices: see InkToolsState for which last only while this Sheet is open. */
+    val tools: StateFlow<InkTools> = toolsState.tools
 
     private val _saveFailed = MutableStateFlow(false)
 
     /** A change couldn't be saved: the screen shows it, but reopening the Sheet wouldn't. */
     val saveFailed: StateFlow<Boolean> = _saveFailed.asStateFlow()
+
+    private val lasso = LassoSelection(_strokes, history, tools, { remove, add -> watch(ink.replace(sheetId, remove, add)) }) { strokes, frame ->
+        SwapStrokes(out = strokes, into = emptyList(), selectOnRevert = frame)
+    }
+    val selection: StateFlow<Selection?> = lasso.selection
 
     /** Ids of strokes drawn while this Sheet is open: for those, memory wins over what the database load returns. */
     private val drawnHere = HashSet<Long>()
@@ -106,128 +89,33 @@ class AnnotationViewModel(
             _strokes.update { drawn -> saved + drawn }
             erasing?.let { it.before = saved + it.before }
         }
-        viewModelScope.launch {
-            val pen = DrawTool(StrokeTool.Pen, settings.observe(InkSettings.penColour).first(), settings.observe(InkSettings.penSize).first())
-            val highlighter = DrawTool(
-                StrokeTool.Highlighter,
-                settings.observe(InkSettings.highlighterColour).first(),
-                settings.observe(InkSettings.highlighterSize).first(),
-            )
-            val partly = settings.observe(InkSettings.includePartlyEnclosed).first()
-            _tools.update {
-                it.copy(
-                    pen = if (penChosen) it.pen else pen,
-                    highlighter = if (highlighterChosen) it.highlighter else highlighter,
-                    includePartlyEnclosed = if (partlyChosen) it.includePartlyEnclosed else partly,
-                )
-            }
-        }
     }
 
-    fun setTools(tools: InkTools) {
-        val before = _tools.value
-        if (tools.pen != before.pen) penChosen = true
-        if (tools.highlighter != before.highlighter) highlighterChosen = true
-        if (tools.includePartlyEnclosed != before.includePartlyEnclosed) {
-            // The lasso's rule is app-wide, unlike the toolbar's colours and sizes: saved as the Setting at once.
-            partlyChosen = true
-            settings.set(InkSettings.includePartlyEnclosed, tools.includePartlyEnclosed)
-        }
-        eraserMemory.eraser = tools.eraser
-        if (tools.chosen != before.chosen) clearSelection()
-        _tools.value = tools
+    /** The toolbar now shows [tools]; with [save] off (a preset slider mid-drag) its app-wide changes wait for the release. */
+    fun setTools(tools: InkTools, save: Boolean = true) {
+        if (tools.chosen != this.tools.value.chosen) clearSelection()
+        toolsState.set(tools, save)
     }
-
-    private val _selection = MutableStateFlow<Selection?>(null)
-    val selection: StateFlow<Selection?> = _selection.asStateFlow()
-
-    private var dragging: Drag? = null
-
-    /** The Pages on screen: a selection lasts only while its Page is shown. */
-    private var visiblePages = emptySet<Int>()
 
     /** The Pages on screen are now [pages] (a page turn): a selection on a Page no longer shown ends. */
-    fun onVisiblePages(pages: Set<Int>) {
-        visiblePages = pages
-        val selected = _selection.value ?: return
-        if (selected.pageIndex !in pages) clearSelection()
-    }
+    fun onVisiblePages(pages: Set<Int>) = lasso.onVisiblePages(pages)
 
-    override fun lassoDone(pageIndex: Int, pagePoints: List<Offset>) =
-        select(pageIndex, lassoSelects(_strokes.value, pageIndex, pagePoints, _tools.value.includePartlyEnclosed))
+    override fun lassoDone(pageIndex: Int, pagePoints: List<Offset>) = lasso.lassoDone(pageIndex, pagePoints)
 
-    override fun tapAt(pageIndex: Int, pagePoint: Offset, slop: Float) =
-        select(pageIndex, listOfNotNull(strokeAt(_strokes.value, pageIndex, pagePoint, slop)))
+    override fun tapAt(pageIndex: Int, pagePoint: Offset, slop: Float) = lasso.tapAt(pageIndex, pagePoint, slop)
 
     /** Selects the strokes [ids] on Page [pageIndex], framed by their ink box; clears the selection if none is there. */
-    fun select(pageIndex: Int, ids: Collection<Long>) {
-        dragging = null
-        val wanted = ids.toHashSet()
-        val strokes = _strokes.value.filter { it.id in wanted && it.pageIndex == pageIndex }
-        _selection.value = if (strokes.isEmpty()) null else Selection(pageIndex, strokes.map { it.id }, SelectionFrame.around(strokes), null)
-    }
+    fun select(pageIndex: Int, ids: Collection<Long>) = lasso.select(pageIndex, ids)
 
-    override fun beginDrag(kind: DragKind, pagePoint: Offset, pageSize: Size) {
-        val selection = _selection.value ?: return
-        val ids = selection.ids.toHashSet()
-        val strokes = _strokes.value.filter { it.id in ids }
-        if (strokes.isEmpty()) return
-        dragging = Drag(kind, pagePoint, Rect(Offset.Zero, pageSize), strokes, inkBounds(strokes), selection.frame)
-    }
+    override fun beginDrag(kind: DragKind, pagePoint: Offset, pageSize: Size) = lasso.beginDrag(kind, pagePoint, pageSize)
 
-    override fun dragTo(pagePoint: Offset) {
-        val drag = dragging ?: return
-        val transform = when (val kind = drag.kind) {
-            DragKind.Move -> move(drag.box, drag.page, pagePoint - drag.start)
-            // The pen may grab the handle off the corner itself (the frame is shown padded, and the handle has a
-            // reach): the corner follows the pen's movement, not the pen, so the size doesn't jump at the first move.
-            is DragKind.Resize -> resize(drag.frame, drag.box, drag.page, kind.corner, drag.frame.corners()[kind.corner] + (pagePoint - drag.start))
-            DragKind.Rotate -> rotate(drag.frame, drag.strokes, drag.page, drag.start, pagePoint)
-        }
-        _selection.update { it?.copy(preview = transform) }
-    }
+    override fun dragTo(pagePoint: Offset) = lasso.dragTo(pagePoint)
 
-    override fun endDrag(cancelled: Boolean) {
-        val drag = dragging ?: return
-        dragging = null
-        val transform = _selection.value?.preview
-        _selection.update { it?.copy(preview = null) }
-        if (cancelled || transform == null || transform.isIdentity) return
-        history.perform(TransformStrokes(drag.strokes, drag.strokes.map(transform::apply), drag.frame, drag.frame.transformed(transform)))
-    }
+    override fun endDrag(cancelled: Boolean) = lasso.endDrag(cancelled)
 
-    override fun deleteSelection() {
-        val selection = _selection.value ?: return
-        val ids = selection.ids.toHashSet()
-        val strokes = _strokes.value.filter { it.id in ids }
-        clearSelection()
-        if (strokes.isNotEmpty()) history.perform(SwapStrokes(out = strokes, into = emptyList(), selectOnRevert = selection.frame))
-    }
+    override fun deleteSelection() = lasso.deleteSelection()
 
-    override fun clearSelection() {
-        dragging = null
-        _selection.value = null
-    }
-
-    /**
-     * Undo and redo put a selection back only while the Lasso tool is chosen, so the user can try again at once, and
-     * only on a Page on screen: one out of sight would be deleted by the next Delete unseen.
-     */
-    private fun reselect(pageIndex: Int, ids: List<Long>, frame: SelectionFrame) {
-        if (_tools.value.chosen != ToolChoice.Lasso || pageIndex !in visiblePages) return
-        _selection.value = Selection(pageIndex, ids, frame, null)
-    }
-
-    /** One drag on the selection, pen down to up: what it started from. */
-    private class Drag(
-        val kind: DragKind,
-        val start: Offset,
-        val page: Rect,
-        val strokes: List<InkStroke>,
-        /** The ink box of [strokes]. */
-        val box: Rect,
-        val frame: SelectionFrame,
-    )
+    override fun clearSelection() = lasso.clearSelection()
 
     /** One drawn stroke, as [parts]: one per Page it ran over (InkStroke.splitAtPages). One undo step takes them all. */
     fun addStrokes(parts: List<InkStroke>) {
@@ -242,13 +130,13 @@ class AnnotationViewModel(
     // Undo and redo wait for the pen to lift: an erase or a drag in progress is not in the history yet. Each clears the
     // selection; a lasso action's command selects its strokes again (reselect).
     fun undo() {
-        if (erasing != null || dragging != null) return
+        if (erasing != null || lasso.dragging) return
         clearSelection()
         history.undo()
     }
 
     fun redo() {
-        if (erasing != null || dragging != null) return
+        if (erasing != null || lasso.dragging) return
         clearSelection()
         history.redo()
     }
@@ -370,7 +258,7 @@ class AnnotationViewModel(
         override fun revert() {
             revertOnScreen()
             save(intoIds, out)
-            selectOnRevert?.let { reselect(out.first().pageIndex, out.map { it.id }, it) }
+            selectOnRevert?.let { lasso.reselect(out.first().pageIndex, out.map { it.id }, it) }
         }
 
         /** Swaps back in memory only: for an erase cancelled before anything of it was saved. */
@@ -381,30 +269,6 @@ class AnnotationViewModel(
         }
 
         fun save(removeIds: Set<Long>, add: List<InkStroke>) = watch(ink.replace(sheetId, removeIds.toList(), add))
-    }
-
-    /**
-     * A lasso move, resize or rotate: [before] become [after], the same ids with the transform baked into their points.
-     * Each is replaced where it is in the list, so the drawing order stays (SwapStrokes would put them on top).
-     */
-    private inner class TransformStrokes(
-        private val before: List<InkStroke>,
-        private val after: List<InkStroke>,
-        private val frameBefore: SelectionFrame,
-        private val frameAfter: SelectionFrame,
-    ) : Command {
-        private val ids = before.map { it.id }
-
-        override fun apply() = put(after, frameAfter)
-
-        override fun revert() = put(before, frameBefore)
-
-        private fun put(strokes: List<InkStroke>, frame: SelectionFrame) {
-            val byId = strokes.associateBy { it.id }
-            _strokes.value = _strokes.value.map { byId[it.id] ?: it }
-            watch(ink.replace(sheetId, ids, strokes))
-            reselect(strokes.first().pageIndex, ids, frame)
-        }
     }
 }
 

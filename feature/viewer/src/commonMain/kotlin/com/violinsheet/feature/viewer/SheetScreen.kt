@@ -56,12 +56,13 @@ fun SheetScreen(
     viewModel: SheetViewModel,
     overlay: @Composable (List<PagePlacement>) -> Unit = {},
     toolbar: @Composable () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     val index by viewModel.pageIndex.collectAsState()
     val pageSizes by viewModel.pageSizes.collectAsState()
     val advanceByOne by viewModel.advanceByOne.collectAsState()
     val openFailed by viewModel.openFailed.collectAsState()
-    BoxWithConstraints(Modifier.fillMaxSize().background(Surround).windowInsetsPadding(WindowInsets.safeDrawing)) {
+    BoxWithConstraints(modifier.fillMaxSize().background(Surround).windowInsetsPadding(WindowInsets.safeDrawing)) {
         if (openFailed) {
             Text("Couldn't open this Sheet: the PDF is damaged", Modifier.align(Alignment.Center), color = Color.White)
             return@BoxWithConstraints

@@ -81,11 +81,17 @@ class AnnotationViewModelTest {
     }
 
     /** Stored Settings by key; empty means every Setting is at its declared default. Writes go to [saved]. */
-    private class FakeSettings(val stored: Map<String, String> = emptyMap()) : SettingDao {
+    /** Settings as stored: a save is read back by the next ViewModel, as in the app. */
+    private class FakeSettings(initial: Map<String, String> = emptyMap()) : SettingDao {
+        private val stored = initial.toMutableMap()
         val saved = mutableListOf<SettingValue>()
         override fun observe(key: String) = flowOf(stored[key])
         override suspend fun upsert(value: SettingValue) {
             saved += value
+            stored[value.key] = value.value
+        }
+        override suspend fun delete(key: String) {
+            stored -= key
         }
     }
 
@@ -275,28 +281,63 @@ class AnnotationViewModelTest {
         assertEquals(emptySet(), savedIds())
     }
 
-    @Test fun reopenedSheetStartsFromSettingsNotFromToolbarChanges() = runTest {
+    @Test fun aSheetStartsOnEachPalettesFirstColourAndMiddlePresetNotOnToolbarChanges() = runTest {
         settingsDao = FakeSettings(
             mapOf(
-                InkSettings.penColour.key to InkSettings.penColour.encode(0xFF123456.toInt()),
-                InkSettings.penSize.key to InkSettings.penSize.encode(4f),
-                InkSettings.highlighterColour.key to InkSettings.highlighterColour.encode(0x99ABCDEF.toInt()),
-                InkSettings.highlighterSize.key to InkSettings.highlighterSize.encode(9f),
+                InkSettings.penPalette.key to InkSettings.penPalette.encode(listOf(0xFF123456.toInt(), 0xFF000000.toInt())),
+                InkSettings.penSizes.key to InkSettings.penSizes.encode(listOf(1f, 2f, 4f)),
+                InkSettings.highlighterPalette.key to InkSettings.highlighterPalette.encode(listOf(HIGHLIGHTER_COLOURS[2].argb, HIGHLIGHTER_COLOURS[0].argb)),
             ),
         )
         val first = viewModel()
         settle()
         val stored = first.tools.value
         assertEquals(0xFF123456.toInt(), stored.pen.colour)
-        first.setTools(stored.copy(pen = stored.pen.copy(colour = 0xFF654321.toInt(), size = 10f), highlighter = stored.highlighter.copy(colour = 0x99010203.toInt(), size = 30f)))
-        assertEquals(10f, first.tools.value.pen.size)
+        assertEquals(2f, stored.pen.size)
+        assertEquals(HIGHLIGHTER_COLOURS[2].argb, stored.highlighter.colour)
+        assertEquals(HIGHLIGHTER_SIZES[1], stored.highlighter.size)
+        first.setTools(stored.copy(pen = stored.pen.copy(colour = 0xFF000000.toInt(), size = 1f)))
 
         val reopened = viewModel()
         settle()
         assertEquals(stored.pen, reopened.tools.value.pen)
         assertEquals(stored.highlighter, reopened.tools.value.highlighter)
-        assertEquals(4f, reopened.tools.value.pen.size)
-        assertEquals(9f, reopened.tools.value.highlighter.size)
+    }
+
+    @Test fun addedColoursAndEditedPresetsAreSavedAndReachTheNextSheet() = runTest {
+        val first = viewModel()
+        settle()
+        first.setTools(first.tools.value.withColourAdded(0xFF6D4C41.toInt()))
+        val (sorted, _) = first.tools.value.withPreset(1, 0.5f).withPresetsSorted(1, from = 1.5f)
+        first.setTools(first.tools.value.withPreset(1, 0.5f), save = false)
+        first.setTools(sorted)
+        settle()
+
+        val reopened = viewModel()
+        settle()
+        assertEquals(PEN_COLOURS.map { it.argb } + 0xFF6D4C41.toInt(), reopened.tools.value.palettes.pen)
+        assertEquals(listOf(0.5f, 0.75f, 3f), reopened.tools.value.sizes.pen)
+        // The colour and size chosen are this Sheet's: the next one starts from the first colour and the middle preset.
+        assertEquals(PEN_COLOURS[0].argb, reopened.tools.value.pen.colour)
+        assertEquals(0.75f, reopened.tools.value.pen.size)
+    }
+
+    @Test fun aPresetDragIsSavedOnceOnRelease() = runTest {
+        val vm = viewModel()
+        settle()
+        listOf(1.75f, 2f, 2.25f).forEach { vm.setTools(vm.tools.value.withPreset(1, it), save = false) }
+        settle()
+        assertTrue(settingsDao.saved.none { it.key == InkSettings.penSizes.key })
+        vm.setTools(vm.tools.value.withPresetsSorted(1, from = 1.5f).first)
+        settle()
+        assertEquals(listOf("0.75,2.25,3.0"), settingsDao.saved.filter { it.key == InkSettings.penSizes.key }.map { it.value })
+    }
+
+    @Test fun anEraserSizeWhosePresetChangedStartsAtTheMiddlePreset() = runTest {
+        settingsDao = FakeSettings(mapOf(InkSettings.eraserSizes.key to InkSettings.eraserSizes.encode(listOf(5f, 10f, 20f))))
+        val vm = viewModel()
+        settle()
+        assertEquals(10f, vm.tools.value.eraser.size)
     }
 
     @Test fun failedWriteSetsSaveFailed() = runTest {
@@ -436,8 +477,8 @@ class AnnotationViewModelTest {
         val vm = viewModel()
         settle()
         val highlighter = vm.tools.value.highlighter
-        assertEquals(InkSettings.highlighterColour.default, highlighter.colour)
-        assertEquals(InkSettings.highlighterSize.default, highlighter.size)
+        assertEquals(HIGHLIGHTER_COLOURS[0].argb, highlighter.colour)
+        assertEquals(HIGHLIGHTER_SIZES[1], highlighter.size)
     }
 
     @Test fun strokeHandedOverDuringAnEraseKeepsPlacesOnUndo() = runTest {

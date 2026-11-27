@@ -3,8 +3,6 @@ package com.violinsheet.feature.settings
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import kotlin.math.roundToInt
 
 /**
@@ -38,6 +36,3 @@ fun formatPoints(value: Float): String {
     return if (decimals.isEmpty()) "${hundredths / 100}" else "${hundredths / 100}.$decimals"
 }
 
-/** Fills the "custom colour" swatch while no custom colour is set. */
-val CustomColourBrush: Brush =
-    Brush.sweepGradient(listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red))

@@ -22,6 +22,8 @@ import com.violinsheet.feature.annotation.AnnotationViewModel
 import com.violinsheet.feature.annotation.InkToolbar
 import com.violinsheet.feature.annotation.UndoControls
 import com.violinsheet.feature.annotation.LassoControls
+import com.violinsheet.feature.annotation.ToolPanelState
+import com.violinsheet.feature.annotation.closesToolPanel
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -86,6 +88,7 @@ class MainActivity : ComponentActivity() {
                         val hasSelection by remember(annotations) { annotations.selection.map { it != null }.distinctUntilChanged() }
                             .collectAsState(initial = false)
                         val selectionColour = MaterialTheme.colorScheme.primary
+                        val panel = remember { ToolPanelState() }
                         SheetScreen(
                             viewModel,
                             overlay = { placements ->
@@ -101,11 +104,14 @@ class MainActivity : ComponentActivity() {
                                 InkToolbar(
                                     tools,
                                     annotations::setTools,
+                                    { annotations.setTools(it, save = false) },
                                     UndoControls(canUndo, canRedo, annotations::undo, annotations::redo),
                                     LassoControls(hasSelection, annotations::deleteSelection),
+                                    panel,
                                     saveFailed,
                                 )
                             },
+                            modifier = Modifier.closesToolPanel(panel),
                         )
                     }
                 }
