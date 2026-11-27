@@ -11,7 +11,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Ink mode: pen, highlighter, eraser, side-button erase | Done | #6, #8 |
 | 1. Annotation editing | Ink lasso: move, resize, rotate, copy/paste within a Sheet, delete | In Progress | #10 done: lasso (fully inside; optional partly-enclosed switch), tap to select, move/resize/rotate/delete with undo. Copy/paste is #11 (after #22) |
 | 1. Annotation editing | Colour picker and size sliders | Done | #9: HSV picker and size sliders in a panel above the toolbar; the same picker on the Settings page. Token use to compare with #8 at the next cleanup |
-| 1. Annotation editing | Saved colour palettes and editable size presets | Not Started | #22, after #25 and before #11 |
+| 1. Annotation editing | Saved colour palettes and editable size presets | In Progress | #22 part 1 (palettes, + Add colour, editing in the Sheet) built, uncommitted; part 2 (Settings → Ink) and review next: `handoffs/22-resume.md` |
 | 1. Annotation editing | Fixes from use (2026-11-27): toolbar keeps one width, palm rejection for navigation, strokes split at Page edges | Done | #23 toolbar, #24 palm rules, #25 strokes split at Page edges. Next: #22, then #11 |
 | 1. Annotation editing | Symbols: fingerings | Not Started | — |
 | 1. Annotation editing | Symbols: articulations | Not Started | — |
