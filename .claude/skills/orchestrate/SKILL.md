@@ -64,6 +64,8 @@ Issues run one at a time: there is one tablet, and the issues block each other.
 
 **When an implementer is stuck** (the build won't go green, a device check keeps failing, a review round comes back still broken): send it back with specific guidance at most twice. After that, stop the run and tell the user what is blocked. Don't take the issue over.
 
+**After adding or changing an agent type mid-session:** the new definition only loads in the next session (spawning it fails with "Agent type '…' not found", or runs the old one). For the rest of the session, spawn `general-purpose` with the model from the table above (the issue's `model:` label for an implementer, opus for a reviewer), told to read and follow that `.claude/agents/<type>.md`.
+
 **When an implementer dies midway** (a usage limit, a crash): compare `git status` and `git diff` with the plan, then resume the same implementer with SendMessage, or spawn a new one told to continue from the current tree with the plan and any report. This is not one of the two retries. If the session itself must stop mid-issue, write `handoffs/<N>-resume.md` (what's done, what's left, the commit steps) first.
 
 **Small fixes outside an issue** (a docs edit, a one-file bug fix, fixes from the user's manual check): if under about 30 lines in one or two files, do them yourself, still with a reviewer before committing, and update the knowledge graph after a code change. Anything bigger becomes a plan and an implementer.
