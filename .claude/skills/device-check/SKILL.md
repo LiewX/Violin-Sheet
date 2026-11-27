@@ -5,7 +5,7 @@ description: How to check the app on the Galaxy Tab S9+ over adb from Git Bash. 
 
 # Device checks
 
-The tablet holds the user's own data (Sheets, Ink): the rules in `CLAUDE.md` → Build & run apply (never `connectedAndroidTest`; no `pm clear` or uninstall; never change an installed database version).
+The tablet holds the user's own data (Sheets, Ink). Sheet 2 ("Test Etude") is the test Sheet. Sheet 1 ("Scales") and Sheet 4 ("Adagio v2", the user's manual-test Sheet) are the user's: never open Sheet 4, and only view Sheet 1. The rules in `CLAUDE.md` → Build & run apply (never `connectedAndroidTest`; no `pm clear` or uninstall; never change an installed database version).
 
 ## Helpers
 

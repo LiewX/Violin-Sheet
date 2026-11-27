@@ -52,3 +52,13 @@ All checks for #2–#6, and the fixes after the first check (palm rest, zoomed t
 
 - [ ] Switch tools on the toolbar: no button jumps.
 - [ ] The Lasso toolbar has empty space right of Delete (the slot is as wide as the Pen/Highlighter controls): does it look acceptable?
+
+## #24 Palm rejection for navigation
+
+- [ ] Palm resting on the Sheet with the pen away, then a finger swipes: two fingers, so the page never turns, and it zooms only past 15 % spread or 24 dp. Is lifting the palm acceptable?
+- [ ] A palm lands while a finger swipe is in progress: that swipe no longer turns the page.
+- [ ] Right after writing, tap the edge with the other hand while the pen hovers: the 300 ms window still treats it as a palm. Does a deliberate tap soon after writing feel blocked?
+- [ ] A touch the system cancels (Samsung palm rejection, the notification shade, a window change) never turns the page, even after resting briefly on the edge.
+- [ ] A resting hand (one or two contacts, still or shifting slightly) neither turns the page nor zooms.
+- [ ] Quick edge taps and flicks feel reliable: 250 ms for a tap and 400 ms for a flick aren't too strict.
+- [ ] A real pinch starts smoothly past the threshold, with no jump and no sticky dead zone.

@@ -26,4 +26,11 @@ class PalmGuardTest {
         guard.penSeen(10_200) // the pen comes into hover range while the palm rests
         assertTrue(guard.penSeenSince(gestureStartMillis = 10_000))
     }
+
+    @Test fun defaultWindowIs300Millis() {
+        val guard = PalmGuard()
+        guard.penSeen(10_000)
+        assertTrue(guard.isPalm(10_250))
+        assertFalse(guard.isPalm(10_350))
+    }
 }

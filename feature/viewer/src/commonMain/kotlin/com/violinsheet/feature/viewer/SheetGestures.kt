@@ -38,18 +38,28 @@ internal interface SheetGestureHandler {
     fun turn(direction: Int)
 }
 
-/** Centroid, pan and zoom factor of two or more fingers since the last event. */
-private fun pinchOf(fingers: List<PointerInputChange>): Triple<Offset, Offset, Float> {
-    fun centroid(positions: List<Offset>) = positions.reduce { a, b -> a + b } / positions.size.toFloat()
-    fun spread(positions: List<Offset>, centre: Offset) = positions.sumOf { (it - centre).getDistance().toDouble() }.toFloat()
+/** Two or more fingers now: their [centroid] and [spread], and the [pan] and [zoom] factor since the last event. */
+private class Pinch(val centroid: Offset, val spread: Float, val pan: Offset, val zoom: Float)
+
+private fun pinchOf(fingers: List<PointerInputChange>): Pinch {
     val now = fingers.map { it.position }
     val before = fingers.map { it.previousPosition }
-    val centre = centroid(now)
-    val previousCentre = centroid(before)
-    val previousSpread = spread(before, previousCentre)
-    val zoom = if (previousSpread > 0f) spread(now, centre) / previousSpread else 1f
-    return Triple(centre, centre - previousCentre, zoom)
+    val centre = centroidOf(now)
+    val spread = spreadOf(now, centre)
+    val previousCentre = centroidOf(before)
+    val previousSpread = spreadOf(before, previousCentre)
+    val zoom = if (previousSpread > 0f) spread / previousSpread else 1f
+    return Pinch(centre, spread, centre - previousCentre, zoom)
 }
+
+/**
+ * Whether [changes], the event that ended a finger gesture, is a cancel (the system took the touch away, e.g. its own
+ * palm rejection) rather than a lift. Compose sends a cancel as every pressed pointer going up already consumed
+ * (`SuspendingPointerInputModifierNodeImpl.onCancelPointerInput`); a real finger lift arrives unconsumed, since
+ * nothing under the Sheet consumes fingers (the Ink canvas takes only the pen).
+ */
+internal fun isCancel(changes: List<PointerInputChange>): Boolean =
+    changes.any { it.type == PointerType.Touch && it.previousPressed && !it.pressed && it.isConsumed }
 
 /**
  * Pinch zooms; one finger pans when zoomed; swipes (past the edge when zoomed) and edge taps turn the page. A finger
@@ -70,6 +80,7 @@ internal fun Modifier.sheetGestures(handler: SheetGestureHandler): Modifier {
     }
     return penWatch.pointerInput(Unit) {
         val swipeDistance = 48.dp.toPx()
+        val pinchCentreSlop = PINCH_CENTRE_DP.dp.toPx()
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
             if (down.type != PointerType.Touch) return@awaitEachGesture
@@ -82,6 +93,7 @@ internal fun Modifier.sheetGestures(handler: SheetGestureHandler): Modifier {
             var drag = Offset.Zero
             var overscroll = Offset.Zero
             var multiTouch = false
+            val gate = PinchGate(pinchCentreSlop, viewConfiguration.touchSlop)
             while (true) {
                 val event = awaitPointerEvent()
                 if (palms.penSeenSince(down.uptimeMillis)) {
@@ -93,11 +105,24 @@ internal fun Modifier.sheetGestures(handler: SheetGestureHandler): Modifier {
                 }
                 // Fingers only: the pen's changes are left unconsumed for the Ink canvas (#6).
                 val fingers = event.changes.filter { it.type == PointerType.Touch && it.pressed }
-                if (fingers.isEmpty()) break
+                if (fingers.isEmpty()) {
+                    // A pinch never turns the page, even when it ends with one finger; nor does a cancelled touch.
+                    if (multiTouch || isCancel(event.changes)) return@awaitEachGesture
+                    val liftMillis = event.changes.maxOf { it.uptimeMillis }
+                    val turn = pageTurnFor(
+                        down.position, drag, overscroll, zoomedAtStart, size.width.toFloat(), swipeDistance,
+                        viewConfiguration.touchSlop, leftEdgeAtStart, rightEdgeAtStart, liftMillis - down.uptimeMillis,
+                    )
+                    if (turn != 0) current.turn(turn)
+                    return@awaitEachGesture
+                }
                 if (fingers.size > 1) {
                     multiTouch = true
-                    val (centroid, pan, zoom) = pinchOf(fingers)
-                    current.transform(centroid, pan, zoom)
+                    val pinch = pinchOf(fingers)
+                    // A hand resting with two fingers that barely move does nothing: see PinchGate.
+                    if (gate.shouldApply(fingers.map { it.id.value }.toSet(), pinch.spread, pinch.centroid)) {
+                        current.transform(pinch.centroid, pinch.pan, pinch.zoom)
+                    }
                 } else if (!multiTouch) {
                     val delta = fingers.first().positionChange()
                     drag += delta
@@ -105,13 +130,6 @@ internal fun Modifier.sheetGestures(handler: SheetGestureHandler): Modifier {
                 }
                 fingers.forEach { it.consume() }
             }
-            // A pinch never turns the page, even when it ends with one finger.
-            if (multiTouch) return@awaitEachGesture
-            val turn = pageTurnFor(
-                down.position, drag, overscroll, zoomedAtStart, size.width.toFloat(), swipeDistance, viewConfiguration.touchSlop,
-                leftEdgeAtStart, rightEdgeAtStart,
-            )
-            if (turn != 0) current.turn(turn)
         }
     }
 }

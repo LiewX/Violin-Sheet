@@ -61,7 +61,7 @@ Freehand Ink, kept as drawn (trimmed to its Page).
 - **copied** and **pasted** on any Page of the same Sheet, at the same position and size in Page units, already selected, with Copy and Paste buttons in the toolbar. A paste lands on the Page the pen last touched (the first shown Page if that one is off screen). On the Page it was copied from, it is offset a little down and right so the copy shows; each further paste on that Page steps the same amount further. Strokes that would fall off the Page are moved inside its edge; a selection larger than the Page is first scaled down to fit. Copy and Paste show with the Lasso tool; Paste works whenever something is copied, even with nothing selected. The copy lasts while the Sheet is open, across tool switches. Pasting into another Sheet is Post-V1.0.
 - **deleted** from the toolbar.
 
-A move, resize or rotate never takes strokes off the Page: the selection stops at the Page edge. A selection is a stroke's whole Ink, highlighter strokes included. Undoing or redoing a lasso action leaves its strokes selected, if they are still on the Page, so the user can try again straight away. A paste is one undo step; Copy is not an undo step.
+A move, resize or rotate never takes strokes off the Page: the selection stops at the Page edge. A selection is a stroke's whole Ink, highlighter strokes included. A selection is on one Page: a lasso selects only strokes on the Page it starts on, so the two parts of a stroke split at a Page edge are selected separately. Undoing or redoing a lasso action leaves its strokes selected, if they are still on the Page, so the user can try again straight away. A paste is one undo step; Copy is not an undo step.
 
 ### Edit mode
 
@@ -128,6 +128,7 @@ A full page opened from a gear icon on the home screen. It holds app-wide Settin
 - Per-Sheet settings (including per-Page ones) that override the app-wide Settings, such as advancing by one Page in landscape.
 - **Sharps/flats/naturals** as Symbols, with spacing adjustment. Making room may need notes or barlines moved, which needs the music data below.
 - Pasting Ink into another Sheet.
+- Linked parts: the parts of a stroke split at a Page edge selected, moved and resized as one, with a selection spanning both Pages of a spread.
 - Recognising a palm by its contact size (revisit for V1.0 if palms still get through after #24).
 - **Handwriting to Symbols:** write a marking by hand and have it converted to a printed-look Symbol, possibly using a small on-device model.
 - **Gesture Covers:** a scribble or cross over a Printed marking, or the side button in Edit mode, applies a Cover automatically. Which gesture is undecided.

@@ -41,6 +41,15 @@ class SheetGesturesDeviceTest {
 
 
     @Test
+    fun twoFingersThatBarelyMoveDontZoom() {
+        // Fingers 5% in from the Page's corners move out to them: the spread grows about 5%, under PinchGate's 15%.
+        page(1).pinchOpen(0.05f)
+        device.waitForIdle()
+        assertNull("a resting two-finger touch zoomed", device.wait(Until.findObject(By.descContains("zoomed")), 1_000))
+        assertNotNull("a two-finger touch turned the page", page(1))
+    }
+
+    @Test
     fun pinchZoomsSwipePansAndSwipePastEdgeTurns() {
         page(1).pinchOpen(0.7f)
         // The Page's label carries the zoom level ("Page 1 of 5, zoomed 250%").

@@ -1,7 +1,7 @@
 package com.violinsheet.feature.viewer
 
-/** How long after the pen was last near the screen a finger touch still counts as a resting palm. */
-private const val PALM_MILLIS = 600L
+/** How long after the pen was last near the screen a finger touch still counts as a resting palm, in milliseconds. */
+private const val PALM_MILLIS = 300L
 
 /**
  * Tells a resting palm from a navigating finger, by when the pen was last seen: hovering (the S Pen is detected about

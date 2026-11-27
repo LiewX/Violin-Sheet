@@ -26,6 +26,15 @@ private const val EDGE_FRACTION = 0.2f
 /** While zoomed, how far past the content's edge (as a share of the width) a swipe must go to turn the page. */
 private const val ZOOMED_SWIPE_FRACTION = 0.2f
 
+/** Longest touch, down to lift in milliseconds, that still counts as a tap. Longer is a resting hand. */
+private const val TAP_MAX_MILLIS = 250L
+
+/** Longest swipe, down to lift in milliseconds, that still turns the page. A slower drag only pans. */
+private const val FLICK_MAX_MILLIS = 400L
+
+/** Whether a touch that lasted [durationMillis] (down to lift) is a deliberate tap, not a resting hand. */
+internal fun isQuickTap(durationMillis: Long): Boolean = durationMillis <= TAP_MAX_MILLIS
+
 /**
  * Rects for [pages] (sizes in PDF points) laid out side by side at one scale, as large as fits in [viewport],
  * centred.
@@ -134,6 +143,8 @@ internal data class Zoom(val scale: Float = 1f, val offset: Offset = Offset.Zero
  * - Zoomed, a swipe pans, so turning takes a deliberate one: it must start with the content already at that edge
  *   ([leftEdgeAtStart] / [rightEdgeAtStart]) and go [ZOOMED_SWIPE_FRACTION] of the width past it ([overscroll]).
  *   A pan that only reaches the edge on the way never turns.
+ * - Timing, from [durationMillis] (down to lift): a tap must be quick ([isQuickTap]) and a swipe take at most
+ *   [FLICK_MAX_MILLIS], so a resting hand or a slow drag never turns.
  */
 internal fun pageTurnFor(
     start: Offset,
@@ -145,9 +156,11 @@ internal fun pageTurnFor(
     tapSlop: Float,
     leftEdgeAtStart: Boolean,
     rightEdgeAtStart: Boolean,
+    durationMillis: Long,
 ): Int {
     if (drag.getDistance() <= tapSlop) {
         return when {
+            !isQuickTap(durationMillis) -> 0
             start.x < width * EDGE_FRACTION -> -1
             start.x > width * (1 - EDGE_FRACTION) -> 1
             else -> 0
@@ -155,6 +168,7 @@ internal fun pageTurnFor(
     }
     fun swipeOf(travel: Offset, distance: Float) =
         if (abs(travel.x) > distance && abs(travel.x) > abs(travel.y)) -sign(travel.x).toInt() else 0
+    if (durationMillis > FLICK_MAX_MILLIS) return 0
     if (!zoomed) return swipeOf(drag, swipeDistance)
     return when (swipeOf(overscroll, maxOf(swipeDistance, width * ZOOMED_SWIPE_FRACTION))) {
         1 -> if (rightEdgeAtStart) 1 else 0
