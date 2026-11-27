@@ -45,13 +45,46 @@ type_into() {
 
 has_text() { ui | grep -qE "(text|content-desc)=\"$1\""; }
 
-# Runs SQL against the app's database (debug build) and prints the rows.
-db() {
+# Copies the app's database (debug build) into a temp folder and prints the folder.
+pull_db() {
     local dir
     dir=$(cygpath -m "$(mktemp -d)") # Windows Python needs a Windows path
     for f in violinsheet.db violinsheet.db-wal violinsheet.db-shm; do adb exec-out run-as $APP cat databases/$f >"$dir/$f" 2>/dev/null; done
+    echo "$dir"
+}
+
+# Runs SQL against the app's database and prints the rows.
+db() {
+    local dir; dir=$(pull_db)
     python -I -c 'import sqlite3, sys; [print(r) for r in sqlite3.connect(sys.argv[1]).execute(sys.argv[2])]' "$dir/violinsheet.db" "$1"
     rm -rf "$dir"
+}
+
+# Strokes per Sheet; with a Sheet id, also one decoded line per stroke (id, size, points, first/last, centroid, box).
+check_db() {
+    local dir; dir=$(pull_db)
+    python -I scripts/check_db.py "$dir/violinsheet.db" counts
+    [ -n "$1" ] && python -I scripts/check_db.py "$dir/violinsheet.db" strokes "$1"
+    rm -rf "$dir"
+}
+
+# Guards the user's own Ink: `ids_same <file> [sheet, default 1]`. The first call saves the Sheet's stroke ids to the
+# file; later calls compare and print "same N ids" or the ids added (+) and gone (-), returning 1 on any change.
+ids_same() {
+    local dir now rc; dir=$(pull_db)
+    now=$(python -I scripts/check_db.py "$dir/violinsheet.db" ids "${2:-1}"); rc=$?; rm -rf "$dir"
+    [ $rc -eq 0 ] || { echo "ids_same: reading the database failed" >&2; return 2; }
+    [ -f "$1" ] || { echo "$now" >"$1"; echo "saved $(grep -c . "$1") ids"; return 0; }
+    if [ "$now" = "$(cat "$1")" ]; then echo "same $(grep -c . "$1") ids"; else diff <(cat "$1") <(echo "$now") | grep -E '^[<>] .' | sed 's/^</-/;s/^>/+/'; return 1; fi
+}
+
+# One pen stroke through the points: `stroke 100 200 300 200 300 400` (screen pixels). Draws lassos too.
+stroke() {
+    [ $# -ge 4 ] && [ $(($# % 2)) -eq 0 ] || { echo "usage: stroke x1 y1 x2 y2 ..." >&2; return 2; }
+    local cmd="input stylus motionevent DOWN $1 $2"
+    shift 2
+    while [ $# -gt 2 ]; do cmd+="; input stylus motionevent MOVE $1 $2"; shift 2; done
+    adb shell "$cmd; input stylus motionevent UP $1 $2"
 }
 
 # Runs an on-device test class from androidApp/src/androidTest, e.g. `device_test SheetGesturesDeviceTest`.

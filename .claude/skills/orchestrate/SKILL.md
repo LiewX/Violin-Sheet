@@ -26,7 +26,7 @@ The main session is the **orchestrator**: it plans, delegates, reviews and commi
 |---|---|
 | Orchestrator (main session) | Opus. At session start, check it is on Opus; if not, ask the user to run `/model opus` and wait |
 | Plan agent | Opus |
-| Implementer | `subagent_type: implementer`, `model` from the issue's `model:` label (`model:opus` → opus, `model:sonnet` → sonnet) |
+| Implementer | `subagent_type: implementer`, `model` from the issue's `model:` label (`model:opus` → opus, `model:sonnet` → sonnet), fix rounds included (never downgraded to save tokens) |
 | Reviewer | `subagent_type: reviewer`, `model: opus` |
 | Explore agent (finding files and symbols) | Haiku. Never coding; its results are facts (where things are), design decisions stay with Opus |
 
@@ -43,10 +43,14 @@ Issues run one at a time: there is one tablet, and the issues block each other.
 
 0. **Clean tree.** `git status` must show no changes, so the commit holds only this issue. If it doesn't, stop and ask the user.
 1. **Plan.** Read the issue, the spec sections and the code it touches, using the Plan agent for design-heavy issues. Grill the user first if the issue forces a big design decision. If the issue needs the tablet, run `adb devices`. Write `handoffs/<N>-plan.md` from the template below. Design questions the docs don't settle stop the run here: ask the user.
+   - **File size:** if the issue would push a source file past ~300 lines (test files exempt), the plan's first step splits it by feature area (e.g. `InkLayer.android.kt` → drawing, selection gestures, erase). No refactor-only issues for this.
+   - **Tablet steps:** each one is written as a scripted check (`device-check` → One script per tablet step) with its expected result, so the implementer can rerun it after each fix.
    - **Skills:** name in the plan the skills relevant to the issue (`device-check` when it has tablet steps; e.g. `mattpocock-skills:tdd` for pure logic).
    - **Splitting:** an issue that spans two subsystems (for example storage plus pen input), or is otherwise too big for one implementer's context (lasso, staff-line detection), is split into ordered parts: plans `<N>-plan-1.md`, `<N>-plan-2.md` …, reports `<N>-report-1.md` …, one shared evidence folder. Each part gets its own implementer, which reads the earlier parts' reports first. There is still one review and one commit for the whole issue; the last part's implementer fixes the review findings.
 2. **Implement.** Spawn one `implementer` with the issue's label model, pointing it at the plan file. Its rules (including what it must not do) are in `.claude/agents/implementer.md`. It writes code and tests, runs the builds and tablet checks, saves evidence in `handoffs/<N>-evidence/`, runs `./gradlew build`, writes its report and stops. While it runs, the orchestrator only reads.
-3. **Review.** First look at the evidence yourself: a report saying "checked on the tablet" is a claim (on 2026-11-26 screenshots caught misplaced Ink and a broken layout that the other checks had passed). Read the db and dump files; open a `-small.png` only when the check is visual. Then spawn **one** `reviewer` (Opus) with the issue number and the plan path; it covers standards and spec in two sections. Exception: a `model:opus` issue touching storage or pen input gets two reviewers in parallel, one per axis (say which axis in the prompt). Send the findings to the **same** implementer with SendMessage; it fixes them, reruns `./gradlew build` and the affected tablet checks, and updates its report.
+3. **Review.** First look at the evidence yourself: a report saying "checked on the tablet" is a claim (on 2026-11-26 screenshots caught misplaced Ink and a broken layout that the other checks had passed). Read the db and dump files; open a `-small.png` only when the check is visual. Then spawn **one** `reviewer` (Opus) with the issue number and the plan path; it covers standards and spec in two sections. Exception: a `model:opus` issue touching storage or pen input gets two reviewers in parallel, one per axis (say which axis in the prompt). Send the findings to the implementer; it fixes them, reruns `./gradlew build` and the affected tablet check scripts, and updates its report.
+   - **Which implementer:** read its final context from `python -I scripts/agent-tokens.py` (its "final context" column). Under ~150k: the **same** one, with SendMessage. Over: a **fresh** one with the same model, told to read the plan, the report, the findings and `git diff --stat`, then only the files the findings touch.
+   - **No new scope in a fix round:** the message holds only findings and answered open questions. A change the user asks for mid-issue becomes a new part (`<N>-plan-K.md`, fresh implementer) that goes into the same review and commit; the review then covers it too. Only a change outside the issue's scope becomes a new issue.
    - A finding the implementer disagrees with gets its reason in the report. Decide: fix it, defer it with a note in the commit, or ask the user if it is a design question.
    - The report's **open questions**: answer them from the docs (and send the answer back), or stop the run and ask the user. A spec gap the user settles goes into the docs, followed by the whole-spec review, before the implementer resumes.
 4. **Commit.**
@@ -69,7 +73,6 @@ Issues run one at a time: there is one tablet, and the issues block each other.
 When the user asks before ending a session:
 
 1. **Token review.** Run `python -I scripts/agent-tokens.py` (no arguments: it reads this project's most recent session). It prints, per subagent, the starting context, tool output by tool, screenshots read and final context, without any content. Then check each `CLAUDE.md` section and each doc agents load against which roles use it. Write the findings into `docs/workflow-ideas.md`, each with a concrete fix. A move into a skill, or any other rule change, is proposed to the user and grilled before it is written. If the script fails or finds no transcripts, say so in the cleanup message and skip this step rather than guess.
-   - **First cleanup after #9 (once):** compare #9's numbers with #8's (workflow idea 27: start ~43k, implementer ~220–240k, reviews ~85–95k each). Log each part that didn't shrink in `docs/workflow-ideas.md` with its number, raise it with the user in the cleanup message, and ask then whether the philosophy skills stay on. Issue work isn't paused for it. Then delete this bullet.
 2. **Workflow ideas.** Add what slowed the orchestration or caused mistakes, each with a concrete fix, and mark earlier ideas **done** or **dropped**. (Implementers' friction is copied in at each issue's commit.)
 3. Update `PROGRESS.md` and the memory.
 
@@ -98,7 +101,7 @@ They live in `handoffs/` (git-ignored), so a cold subagent gets the whole contex
 <Skills to load for this issue, e.g. device-check. "None" if none.>
 
 ## Verify
-<Unit tests to add, and the tablet checks to run (text checks: db, dump, pixels).>
+<Unit tests to add. Each tablet step: what the `check-<step>.sh` script does and its expected `check_db`/`ui`/`pixels` result. The user's stroke counts are recorded at the start, never given as numbers.>
 
 ## Cases adb can't simulate
 <Input issues only: the multi-pointer cases (palm then pen, pen then finger, two hands) and how the design handles each. "None" if not an input issue.>

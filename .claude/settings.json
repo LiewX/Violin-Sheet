@@ -20,6 +20,17 @@
     "claude-in-chrome": "off",
     "claude-api": "off",
     "schedule": "off",
-    "loop": "off"
+    "loop": "off",
+    "ask-before-guess": "off",
+    "build-for-today": "off",
+    "intent-over-behavior": "off",
+    "keep-it-small": "off",
+    "leave-the-why": "off",
+    "plan-your-exit": "off",
+    "reuse-not-rewrite": "off",
+    "see-it-first": "off",
+    "speak-their-language": "off",
+    "stand-on-shoulders": "off",
+    "tidy-as-you-go": "off"
   }
 }

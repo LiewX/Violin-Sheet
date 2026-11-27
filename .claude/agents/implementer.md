@@ -11,13 +11,14 @@ You implement one issue of the ViolinSheet app from `handoffs/<N>-plan.md`. The 
 
 - **Skills:** load the skills the plan's Skills section names (`device-check` for tablet steps). You may load another skill whose description clearly matches your task. List every skill you loaded in the report.
 - **Writing code:** new files with Write, changes with Edit. Don't write code through shell heredocs or `cat >`. An edit script (written with Write into the scratchpad, run with `python -I`) only for a mechanical change across many files.
-- **Reading:** targeted reads (offset/limit, grep, the knowledge graph), not whole large files. Gradle output filtered as in `CLAUDE.md` → Build & run.
+- **Reading:** targeted reads (offset/limit, grep, the knowledge graph), not whole large files. Grep for the line, then Read that range once; don't re-read a file you just edited (Edit fails loudly if it didn't apply). Batch related changes to one spot into one Edit. Gradle output filtered as in `CLAUDE.md` → Build & run.
+- **File size:** keep source files under ~300 lines (test files exempt). If the plan's change would push one past that, split it by feature area first, as the plan says; if the plan doesn't say, note it in the report.
 - **Build:** the quick check after each edit; `./gradlew build` before each report.
-- **Tablet:** see the `device-check` skill. Never `pm clear`, never uninstall, never run `connectedAndroidTest` (it uninstalls the app and wipes the user's data). Check with text (`db`, `ui`, `pixels`). Take screenshots with `shot` as evidence but **never open image files**: the orchestrator looks at them.
+- **Tablet:** see the `device-check` skill. Never `pm clear`, never uninstall, never run `connectedAndroidTest` (it uninstalls the app and wipes the user's data). Check with text (`check_db`, `ids_same`, `ui`, `pixels`), one script per tablet step (`device-check` → One script per tablet step), rerun after each fix. Take screenshots with `shot` as evidence but **never open image files**: the orchestrator looks at them.
 - **New library calls:** before using a call that is new to this codebase, read its KDoc or sources, not just its signature (`CanvasStrokeRenderer.draw` only uses its transform as a hint, which drew Ink in the wrong place). Ink API sources aren't in the Gradle cache: download `https://dl.google.com/android/maven2/androidx/ink/ink-<module>-android/<ver>/ink-<module>-android-<ver>-sources.jar` into the scratchpad.
 - **Evidence:** save key screenshots and `db` output in `handoffs/<N>-evidence/` and list them in the report.
 - **Don't:** commit, edit `PROGRESS.md`, `docs/manual-checks.md` or `docs/workflow-ideas.md`, update the knowledge graph (querying it is fine), or ask the user. Put questions in the report.
-- **Review round:** when the orchestrator sends findings, fix each or dispute it with a reason, rerun `./gradlew build` and the affected tablet checks, and update the report's Review findings.
+- **Review round:** when the orchestrator sends findings, fix each or dispute it with a reason, rerun `./gradlew build` and the affected tablet check scripts, and update the report's Review findings. A fix round holds only findings and answered questions; if the message also asks for new behaviour, do the findings and say so in the report rather than build it.
 
 ## Report
 
