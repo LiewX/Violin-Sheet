@@ -57,11 +57,11 @@ An app-wide default that a new Sheet starts from, declared by the feature it bel
 _Avoid_: Preference, config, option
 
 **Palette**:
-A tool's app-wide list of colours shown in the toolbar: its factory colours plus the custom colours saved by drawing with them, edited on the Settings page.
+A tool's app-wide list of colours shown in the toolbar: its factory colours plus colours added with + Add colour. Colours are added and edited (Cancel/Save) from the Sheet or the Settings page; deleted and reordered on the Settings page.
 _Avoid_: Presets (for colours), swatches (for the list)
 
 **Size preset**:
-One of a tool's three app-wide sizes in the toolbar, editable from the Sheet (tap the selected preset) and the Settings page. Any other size set with the slider in a Sheet is a custom size for that Sheet only.
+One of a tool's three app-wide sizes in the toolbar, editable from the Sheet (tap the selected preset) and the Settings page. Every size drawn with is a preset.
 
 ### Modes
 
