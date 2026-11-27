@@ -75,7 +75,7 @@ class MainActivity : ComponentActivity() {
                         val sheetId = entry.arguments?.getString("id")?.toLongOrNull() ?: 0
                         val pdfFile = entry.arguments?.getString("pdfFile").orEmpty()
                         // The list only opens Sheets whose PDF exists (a missing one shows the re-import prompt).
-                        val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile)), sheetId, app.sheetRepository, app.settingsStore) }
+                        val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile)), app.settingsStore) }
                         val annotations = viewModel { AnnotationViewModel(sheetId, app.inkRepository, app.settingsStore, app.eraserMemory) }
                         val strokes by annotations.strokes.collectAsState()
                         val tools by annotations.tools.collectAsState()

@@ -31,10 +31,6 @@ class SheetRepository(
 
     val sheets: Flow<List<Sheet>> = dao.observeAll()
 
-    fun sheet(id: Long): Flow<Sheet?> = dao.observe(id)
-
-    suspend fun setAdvanceByOne(sheetId: Long, advanceByOne: Boolean) = dao.setAdvanceByOne(sheetId, advanceByOne)
-
     fun isPdfMissing(sheet: Sheet): Boolean = !pdfs.exists(sheet.pdfFile)
 
     /**

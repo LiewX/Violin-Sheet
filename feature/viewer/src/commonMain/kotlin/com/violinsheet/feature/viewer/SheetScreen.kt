@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -144,15 +142,6 @@ fun SheetScreen(
             }
         }
         Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)) { toolbar() }
-        if (spread) {
-            FilterChip(
-                selected = advanceByOne,
-                onClick = { viewModel.setAdvanceByOne(!advanceByOne) },
-                label = { Text("Advance by one") },
-                colors = FilterChipDefaults.filterChipColors(containerColor = Color.White.copy(alpha = 0.85f)),
-                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-            )
-        }
         // After the shown Pages, so their renders are queued first.
         LaunchedEffect(index, spread, viewport, advanceByOne) { viewModel.preRenderAround(index, spread, viewport) }
     }

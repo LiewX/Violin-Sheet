@@ -6,7 +6,6 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.violinsheet.core.data.SheetRepository
 import com.violinsheet.core.data.settings.SettingsStore
 import com.violinsheet.core.pdf.PdfDocument
 import kotlinx.coroutines.Deferred
@@ -16,16 +15,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** One open Sheet: the current Page, and rendered Pages kept ready so a turn never shows a blank Page. */
 class SheetViewModel(
     private val document: PdfDocument,
-    private val sheetId: Long,
-    private val repository: SheetRepository,
     settings: SettingsStore,
 ) : ViewModel() {
     val pageCount: Int = document.pageCount
@@ -45,11 +42,10 @@ class SheetViewModel(
         .catch { _openFailed.value = true }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    /** In a spread, turns advance one Page instead of two: the Sheet's own choice, else the Reading Setting. */
-    val advanceByOne: StateFlow<Boolean> =
-        combine(repository.sheet(sheetId), settings.observe(ViewerSettings.landscapeAdvance)) { sheet, advance ->
-            sheet?.advanceByOne ?: (advance == ViewerSettings.ADVANCE_ONE)
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    /** In a spread, turns advance one Page instead of two, as the Reading Setting says. */
+    val advanceByOne: StateFlow<Boolean> = settings.observe(ViewerSettings.landscapeAdvance)
+        .map { it == ViewerSettings.ADVANCE_ONE }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** A Page rendered at exactly [size] pixels. */
     private data class PageKey(val index: Int, val size: IntSize)
@@ -60,10 +56,6 @@ class SheetViewModel(
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<PageKey, ImageBitmap>) = size > 6
     }
     private val inFlight = mutableMapOf<PageKey, Deferred<ImageBitmap>>()
-
-    fun setAdvanceByOne(advanceByOne: Boolean) {
-        viewModelScope.launch { repository.setAdvanceByOne(sheetId, advanceByOne) }
-    }
 
     private fun step(spread: Boolean) = if (spread && !advanceByOne.value) 2 else 1
 

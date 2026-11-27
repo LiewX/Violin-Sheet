@@ -24,8 +24,6 @@ class SheetRepositoryTest {
         override suspend fun insert(sheet: Sheet): Long = nextId++.also { rows.value += sheet.copy(id = it) }
         override suspend fun rename(id: Long, name: String) = update(id) { it.copy(name = name) }
         override suspend fun get(id: Long) = rows.value.firstOrNull { it.id == id }
-        override fun observe(id: Long): Flow<Sheet?> = MutableStateFlow(rows.value.firstOrNull { it.id == id })
-        override suspend fun setAdvanceByOne(id: Long, advanceByOne: Boolean) = update(id) { it.copy(advanceByOne = advanceByOne) }
         override suspend fun setDeletedAt(id: Long, deletedAt: Long) = update(id) { it.copy(deletedAt = deletedAt) }
         override suspend fun undoDelete(id: Long): Int {
             if (get(id)?.deletedAt == null) return 0

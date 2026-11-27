@@ -13,6 +13,9 @@ data class Sheet(
     val pdfFile: String,
     /** When the user deleted it (epoch ms). Hidden from the list, and purged once the Undo bar has expired. */
     val deletedAt: Long? = null,
-    /** In a two-Page spread, a turn advances one Page instead of two. Null: follow the app-wide Setting (#5). */
+    /**
+     * Per-Sheet "advance by one" in a spread. Unused in V1.0 (per-Sheet settings are Post-V1.0); the column stays
+     * because schema 3 is already installed.
+     */
     val advanceByOne: Boolean? = null,
 )
