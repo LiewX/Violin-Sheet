@@ -86,7 +86,7 @@ handoffs/                             Orchestrator ↔ implementer plan and repo
 
 ## UI/UX
 
-- **Toolbar:** a slim palette that stays at the bottom edge, within thumb and pen reach. It keeps one width and position whatever the tool: the tool-specific controls sit in a slot as wide as the widest tool's, so no button moves under the pen. No modal dialogs for switching tools or picking colours.
+- **Toolbar:** a slim palette that stays at the bottom edge, within thumb and pen reach. Within a mode it keeps one width and position whatever the tool (the layout across modes is decided with Edit mode's toolbar): the tool-specific controls sit in a slot as wide as the widest tool's, so no button moves under the pen. No modal dialogs for switching tools or picking colours.
 - **Input split:** the pen draws and edits; fingers only navigate (turn pages, zoom, open Links). Rely on the platform's palm rejection for pen input; finger navigation adds the palm rules in `docs/SPECS.md` (pen-near window, tap and flick timing, pinch threshold). Verify that finger touches during pen input do not create strokes.
 - **Symbol placement:** select Symbol → tap to place → ghost preview → confirm, so placing a printed-look Symbol feels deliberate.
 - **Page transitions:** pre-render at least the next Page so page turns are instant and silent. Automatic page flipping (Feature 3) needs zero blank-flash latency.

@@ -65,6 +65,7 @@ fun InkToolbar(tools: InkTools, onTools: (InkTools) -> Unit, undo: UndoControls,
     LaunchedEffect(lassoChosen) { panelOpen = false }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (panelOpen) ToolPanel(tools, onTools)
+        if (saveFailed) Text("Last change not saved", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
         Surface(shape = RoundedCornerShape(24.dp), tonalElevation = 3.dp, shadowElevation = 3.dp) {
             Row(
                 Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -79,7 +80,6 @@ fun InkToolbar(tools: InkTools, onTools: (InkTools) -> Unit, undo: UndoControls,
                     Icon(UndoArrow, contentDescription = "Redo", modifier = Modifier.graphicsLayer(scaleX = -1f))
                 }
                 ToolbarDivider()
-                if (saveFailed) Text("Last change not saved", color = MaterialTheme.colorScheme.error)
                 ToolChoice.entries.forEach { choice ->
                     val onClick = if (choice == ToolChoice.Lasso && lassoChosen) {
                         { panelOpen = !panelOpen }
@@ -92,19 +92,21 @@ fun InkToolbar(tools: InkTools, onTools: (InkTools) -> Unit, undo: UndoControls,
                 }
                 ToolbarDivider()
                 val openPanel = { panelOpen = true }
-                when (tools.chosen) {
-                    ToolChoice.Pen -> DrawPresets(tools.pen, "pen", PEN_COLOURS, PEN_SIZES, openPanel) { onTools(tools.copy(pen = it)) }
-                    ToolChoice.Highlighter ->
-                        DrawPresets(tools.highlighter, "highlighter", HIGHLIGHTER_COLOURS, HIGHLIGHTER_SIZES, openPanel) { onTools(tools.copy(highlighter = it)) }
-                    ToolChoice.Eraser -> EraserPresets(tools.eraser) { onTools(tools.copy(eraser = it)) }
-                    ToolChoice.Lasso -> IconButton(onClick = lasso.onDelete, enabled = lasso.hasSelection, modifier = Modifier.size(40.dp)) {
-                        Icon(DeleteIcon, contentDescription = "Delete selection")
+                ToolSlot(tools.chosen) { choice ->
+                    when (choice) {
+                        ToolChoice.Pen -> DrawPresets(tools.pen, "pen", PEN_COLOURS, PEN_SIZES, openPanel) { onTools(tools.copy(pen = it)) }
+                        ToolChoice.Highlighter ->
+                            DrawPresets(tools.highlighter, "highlighter", HIGHLIGHTER_COLOURS, HIGHLIGHTER_SIZES, openPanel) { onTools(tools.copy(highlighter = it)) }
+                        ToolChoice.Eraser -> EraserPresets(tools.eraser) { onTools(tools.copy(eraser = it)) }
+                        ToolChoice.Lasso -> IconButton(onClick = lasso.onDelete, enabled = lasso.hasSelection, modifier = Modifier.size(40.dp)) {
+                            Icon(DeleteIcon, contentDescription = "Delete selection")
+                        }
                     }
-                }
-                if (!lassoChosen) {
-                    ToolbarDivider()
-                    Choice(selected = panelOpen, label = "Colour and size", onClick = { panelOpen = !panelOpen }) {
-                        Icon(TuneIcon, contentDescription = null)
+                    if (choice != ToolChoice.Lasso) {
+                        ToolbarDivider()
+                        Choice(selected = panelOpen, label = "Colour and size", onClick = { panelOpen = !panelOpen }) {
+                            Icon(TuneIcon, contentDescription = null)
+                        }
                     }
                 }
             }
