@@ -13,6 +13,12 @@ _Avoid_: Part, score, file, document
 **Page**:
 One page of a Sheet.
 
+**Spread**:
+Two Pages shown side by side, in landscape.
+
+**Surround**:
+The neutral dark grey area around and between the Pages on screen.
+
 **Printed marking**:
 Anything already on the imported Sheet: notes, ties, bowings, fingerings, dynamics.
 _Avoid_: Default annotation, original annotation
@@ -23,7 +29,7 @@ _Avoid_: Default annotation, original annotation
 Anything the player adds on top of a Sheet: Ink, a Symbol, a Cover or a Text box.
 
 **Ink**:
-A freehand pen or highlighter stroke, kept exactly as drawn.
+A freehand pen or highlighter stroke on one Page, kept as drawn (trimmed to its Page).
 _Avoid_: Raw annotation, handwriting
 
 **Symbol**:

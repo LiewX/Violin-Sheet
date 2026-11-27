@@ -27,7 +27,7 @@ Mark up a Sheet with the pen. Printed-look edits should look like they were prin
 - Sheet records (name, file hash, per-Sheet choices), Annotations and Settings are covered by Android's built-in backup. Imported PDFs are not (the backup is capped at 25 MB per app). After a restore, a Sheet whose PDF is missing shows "PDF missing, re-import"; re-importing the same file, recognised by a hash of its contents, reattaches its Annotations. Re-importing from one Sheet's "PDF missing" prompt fixes that Sheet; a normal import from the home screen fixes every missing Sheet with that hash instead of creating a new Sheet.
 - Layout follows rotation: one Page in portrait, two Pages side by side in landscape. In landscape a turn advances two Pages, or one if the Reading Setting says so. V1.0 has no per-Sheet toggle for it; per-Sheet (and per-Page) settings are Post-V1.0.
 - The next Page (or spread) is pre-rendered so page turns are instant.
-- The **pen** draws and edits. A hand resting on the screen while the pen is near is a palm and does nothing. **Fingers** only navigate: swipe or tap the edge to turn the page, pinch to zoom, tap a Link to open it. When zoomed in, a swipe pans; an edge tap, or a deliberate swipe past the Page edge (starting with the edge already on screen), turns the page. A turn keeps the zoom and its height on the Page and lands on the opposite side: the left edge going forward, the right edge going back. A rotation returns to fit.
+- The **pen** draws and edits. A hand resting on the screen while the pen is near (or was, within 0.3 s) is a palm and does nothing. A resting hand is also kept from navigating when the pen is away: an edge tap turns only if the finger lifts within 0.25 s, a swipe only if it is a flick done within 0.4 s, and two fingers zoom or pan only once their spread changes by more than about 15 % or their centre moves more than about 24 dp. Recognising a palm by its contact size is a later step, if palms still get through. **Fingers** only navigate: swipe or tap the edge to turn the page, pinch to zoom (two fingers also pan), tap a Link to open it. When zoomed in, a swipe pans; an edge tap, or a deliberate swipe past the Page edge (starting with the edge already on screen), turns the page. A turn keeps the zoom and its height on the Page and lands on the opposite side: the left edge going forward, the right edge going back. A rotation returns to fit.
 
 ### Modes
 
@@ -35,7 +35,7 @@ There are three modes: **Ink mode**, **Edit mode** and **Text mode**.
 
 ### Ink mode
 
-Freehand Ink, kept as drawn.
+Freehand Ink, kept as drawn (trimmed to its Page).
 
 | Tool | Colours | Size |
 |---|---|---|
@@ -45,8 +45,10 @@ Freehand Ink, kept as drawn.
 | Lasso | — | — |
 
 - Sizes are measured on the Page, not the screen, so a stroke keeps its thickness relative to the notes at any zoom.
+- A stroke belongs to one Page. A stroke drawn across into the other Page of a spread is split at the edge when the pen lifts, into one stroke per Page (one undo step); the parts outside any Page (the surround, the gap between Pages) are trimmed. While drawing, the whole line shows.
 - **Holding the S Pen side button** erases while held; releasing it returns to the previous tool. On iPad the trigger is decided at the port (the Apple Pencil has no side button).
-- **The panel** above the toolbar (never a dialog) holds the custom colour picker (a saturation/brightness square and a hue strip, with the tool's factory colours under it) and the size slider; for the eraser, only the slider. It opens from the "Colour and size" button at the end of the toolbar, by tapping the selected colour, or by tapping the selected size preset. Switching tool shows that tool's controls in it. Any touch outside the panel closes it and still does its job (a stroke draws, a toolbar button works, a swipe turns the Page).
+- **The toolbar** keeps one width and position for every tool: buttons never move under the pen.
+- **The panel** above the toolbar (never a dialog) holds the custom colour picker (a saturation/brightness square and a hue strip, with the tool's factory colours under it) and the size slider; for the eraser, only the slider. It opens from the "Colour and size" button at the end of the toolbar, by tapping the selected colour, or by tapping the selected size preset. Switching tool shows that tool's controls in it. Any touch outside the panel closes it and still does its job (a stroke draws, a toolbar button works, a flick turns the Page).
 - **Palettes:** the pen and the highlighter each have one app-wide palette, kept across Sheets and restarts. A colour from the picker joins its tool's palette the first time a stroke is drawn with it (an exact duplicate isn't added); picking alone saves nothing. Changing a colour loaded from a swatch makes a new colour and never edits the swatch. The toolbar shows about five swatches and scrolls sideways beyond that, with an edge fade; the custom swatch stays fixed at the end.
 - A custom highlighter colour keeps the highlighter's translucency: the picker sets the hue, not the opacity.
 - **Size presets** (three per tool, pen, highlighter and eraser) are app-wide and editable. The panel opened by tapping the selected size preset edits that preset (labelled, e.g. "Editing: small preset"), and the presets re-sort small to large on release. Opened any other way, the slider sets a free size for this Sheet only; no preset is selected and nothing is saved.
@@ -56,10 +58,10 @@ Freehand Ink, kept as drawn.
 - **moved** by dragging,
 - **resized** with corner handles, keeping its proportions (stroke thickness scales with it),
 - **rotated** with a rotate handle (free, snapping at every right angle: 0°, 90°, 180° and 270°),
-- **copied** and **pasted** on any Page of the same Sheet, at the same position and size in Page units, already selected. Strokes that would fall off the Page are moved inside its edge. Pasting into another Sheet is Post-V1.0.
+- **copied** and **pasted** on any Page of the same Sheet, at the same position and size in Page units, already selected, with Copy and Paste buttons in the toolbar. A paste lands on the Page the pen last touched (the first shown Page if that one is off screen). On the Page it was copied from, it is offset a little down and right so the copy shows; each further paste on that Page steps the same amount further. Strokes that would fall off the Page are moved inside its edge; a selection larger than the Page is first scaled down to fit. The copy lasts while the Sheet is open. Pasting into another Sheet is Post-V1.0.
 - **deleted** from the toolbar.
 
-A move, resize or rotate never takes strokes off the Page: the selection stops at the Page edge. A selection is a stroke's whole Ink, highlighter strokes included. Undoing or redoing a lasso action leaves its strokes selected, so the user can try again straight away.
+A move, resize or rotate never takes strokes off the Page: the selection stops at the Page edge. A selection is a stroke's whole Ink, highlighter strokes included. Undoing or redoing a lasso action leaves its strokes selected, if they are still on the Page, so the user can try again straight away. A paste is one undo step; Copy is not an undo step.
 
 ### Edit mode
 
