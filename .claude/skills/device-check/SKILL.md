@@ -5,7 +5,7 @@ description: How to check the app on the Galaxy Tab S9+ over adb from Git Bash. 
 
 # Device checks
 
-The tablet holds the user's own data (Sheets, Ink). Sheet 2 ("Test Etude") is the test Sheet. Sheet 1 ("Scales") and Sheet 4 ("Adagio v2", the user's manual-test Sheet) are the user's: never open Sheet 4, and only view Sheet 1. The rules in `CLAUDE.md` → Build & run apply (never `connectedAndroidTest`; no `pm clear` or uninstall; never change an installed database version).
+The tablet holds the user's own data (Sheets, Ink). Sheets 2 ("Test Etude", 1 Page) and 5 ("Test Spread", 4 blank staff Pages; a landscape spread shows Pages 1–2 with no gap between them) are the test Sheets: draw only there, and leave them with 0 strokes. Sheet 1 ("Scales") and Sheet 4 ("Adagio v2", the user's manual-test Sheet) are the user's: never open Sheet 4, and only view Sheet 1. The rules in `CLAUDE.md` → Build & run apply (never `connectedAndroidTest`; no `pm clear` or uninstall; never change an installed database version).
 
 ## Helpers
 
@@ -41,6 +41,7 @@ Implementers check with text: `db` rows, the `ui` dump, and `pixels` for colours
 - Snackbar text doesn't show in uiautomator dumps: check the message with `pixels`, or leave it to the orchestrator's screenshot look.
 - Compose reports a `selectable` choice as **checked** (`checked="true"`), not selected, to UiAutomator.
 - `device_test` ends by killing the app, which clears the undo history. Run undo/redo checks, and clean up test Ink by undo, **before** any `device_test` run, and before closing the Sheet.
+- The eraser's Stroke/Area mode chips both report `checked="false"`: tap the mode you need instead of reading it.
 - The `ui` dump reports `enabled="true"` on an Icon node always; the `IconButton` node one line above holds the real value.
 - Clean up test Ink on the test Sheet before closing it, and guard the user's Sheets with `ids_same` before and after. A `delete_strokes <sheetId>` helper (a small permanent androidTest) doesn't exist yet; build it in the first issue that needs it.
 

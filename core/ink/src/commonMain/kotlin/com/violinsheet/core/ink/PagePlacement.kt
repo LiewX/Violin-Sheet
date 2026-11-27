@@ -14,4 +14,7 @@ data class PagePlacement(val pageIndex: Int, val pageSize: Size, val scale: Floa
     fun toScreen(page: Offset): Offset = page * scale + offset
 
     fun toPage(screen: Offset): Offset = (screen - offset) / scale
+
+    /** Whether the screen point [screen] is on this Page, its edges included: the one rule for "on a Page". */
+    fun holds(screen: Offset): Boolean = screenRect.let { screen.x in it.left..it.right && screen.y in it.top..it.bottom }
 }

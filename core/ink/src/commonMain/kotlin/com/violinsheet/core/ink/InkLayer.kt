@@ -7,7 +7,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 
 /**
- * Draws [strokes] on the Pages at [placements] and lets the pen use [tool]: a finished stroke goes to [onStroke], an
+ * Draws [strokes] on the Pages at [placements] and lets the pen use [tool]: a finished stroke goes to [onStrokes] as
+ * one stroke per Page it ran over (splitAtPages; never an empty list, and nothing for a stroke off every Page), an
  * erase gesture to [erase], both in Page coordinates. Holding the pen's erase action erases with [eraser] instead
  * (toolForGesture). With the Lasso tool the pen selects and drags [selection] through [lasso]; the frame is drawn in
  * [selectionColour]. Only the pen draws, erases and selects; finger touches pass through to navigation (CLAUDE.md:
@@ -20,7 +21,7 @@ expect fun InkLayer(
     strokes: List<InkStroke>,
     tool: InkTool,
     eraser: Eraser,
-    onStroke: (InkStroke) -> Unit,
+    onStrokes: (List<InkStroke>) -> Unit,
     erase: EraseInput,
     selection: Selection?,
     lasso: LassoInput,

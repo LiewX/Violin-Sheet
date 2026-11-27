@@ -61,7 +61,7 @@ A tool's app-wide list of colours shown in the toolbar: its factory colours plus
 _Avoid_: Presets (for colours), swatches (for the list)
 
 **Size preset**:
-One of a tool's three app-wide sizes in the toolbar, editable from the Sheet and the Settings page.
+One of a tool's three app-wide sizes in the toolbar, editable from the Sheet (tap the selected preset) and the Settings page. Any other size set with the slider in a Sheet is a custom size for that Sheet only.
 
 ### Modes
 

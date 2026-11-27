@@ -122,7 +122,7 @@ private fun segmentDistanceSquared(a: InkPoint, b: InkPoint, c: Offset): Float {
     return px * px + py * py
 }
 
-private fun InkPoint.lerp(to: InkPoint, t: Float) = InkPoint(
+internal fun InkPoint.lerp(to: InkPoint, t: Float) = InkPoint(
     x + (to.x - x) * t,
     y + (to.y - y) * t,
     pressure + (to.pressure - pressure) * t,

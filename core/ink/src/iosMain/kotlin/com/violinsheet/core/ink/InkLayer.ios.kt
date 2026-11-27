@@ -11,7 +11,7 @@ actual fun InkLayer(
     strokes: List<InkStroke>,
     tool: InkTool,
     eraser: Eraser,
-    onStroke: (InkStroke) -> Unit,
+    onStrokes: (List<InkStroke>) -> Unit,
     erase: EraseInput,
     selection: Selection?,
     lasso: LassoInput,

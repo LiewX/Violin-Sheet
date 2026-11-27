@@ -141,8 +141,8 @@ class AnnotationViewModelTest {
     @Test fun undoRemovesLastStrokeAndRedoPutsItBack() = runTest {
         val vm = viewModel()
         settle()
-        vm.addStroke(stroke(1))
-        vm.addStroke(stroke(2))
+        vm.addStrokes(listOf(stroke(1)))
+        vm.addStrokes(listOf(stroke(2)))
 
         vm.undo()
         settle()
@@ -155,9 +155,51 @@ class AnnotationViewModelTest {
         assertEquals(setOf(1L, 2L), savedIds())
     }
 
+    @Test fun strokeSplitAcrossPagesIsOneUndoStep() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStrokes(listOf(stroke(1)))
+        // One stroke drawn across a spread: a part on each Page.
+        vm.addStrokes(listOf(line(2000, y = 10f, page = 0), line(2001, y = 10f, page = 1)))
+        settle()
+        assertEquals(mapOf(1L to 0, 2000L to 0, 2001L to 1), dao.rows.associate { it.id to it.pageIndex })
+
+        vm.undo()
+        settle()
+        assertEquals(listOf(1L), vm.ids())
+        assertEquals(setOf(1L), savedIds())
+
+        vm.redo()
+        settle()
+        assertEquals(listOf(1L, 2000L, 2001L), vm.ids())
+        assertEquals(mapOf(1L to 0, 2000L to 0, 2001L to 1), dao.rows.associate { it.id to it.pageIndex })
+    }
+
+    @Test fun erasingOnePartOfASplitStrokeLeavesTheOther() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStrokes(listOf(line(2000, y = 10f, page = 0), line(2001, y = 10f, page = 1)))
+        vm.beginErase(Eraser(EraseMode.Stroke, 4f))
+        vm.eraseAt(1, Offset(50f, 10f))
+        vm.endErase(cancelled = false)
+        settle()
+        assertEquals(listOf(2000L), vm.ids())
+        assertEquals(setOf(2000L), savedIds())
+
+        vm.undo()
+        settle()
+        assertEquals(listOf(2000L, 2001L), vm.ids())
+        assertEquals(mapOf(2000L to 0, 2001L to 1), dao.rows.associate { it.id to it.pageIndex })
+
+        vm.undo()
+        settle()
+        assertEquals(emptyList(), vm.ids())
+        assertEquals(emptySet(), savedIds())
+    }
+
     @Test fun quickDrawUndoRedoLeavesDatabaseMatchingScreen() = runTest {
         val vm = viewModel()
-        vm.addStroke(stroke(1))
+        vm.addStrokes(listOf(stroke(1)))
         vm.undo()
         vm.redo()
         vm.undo()
@@ -181,7 +223,7 @@ class AnnotationViewModelTest {
         dao.rows += InkStrokeRow(100, sheetId, 0, 0, 1f, encodeInkPoints(stroke(100).points), "pen")
         dao.readAfterMillis = 50
         val vm = viewModel()
-        vm.addStroke(stroke(1))
+        vm.addStrokes(listOf(stroke(1)))
         vm.undo()
         settle()
         assertEquals(listOf(100L), vm.ids())
@@ -194,7 +236,7 @@ class AnnotationViewModelTest {
         dao.readAfterMillis = 20
         dao.returnAfterMillis = 100
         val vm = viewModel()
-        vm.addStroke(stroke(1))
+        vm.addStrokes(listOf(stroke(1)))
         // Saved before the load's read, so the load returns it; undone before the load finishes.
         advanceTimeBy(30)
         vm.undo()
@@ -207,12 +249,12 @@ class AnnotationViewModelTest {
         val vm = viewModel()
         assertFalse(vm.canUndo.value)
         assertFalse(vm.canRedo.value)
-        vm.addStroke(stroke(1))
+        vm.addStrokes(listOf(stroke(1)))
         assertTrue(vm.canUndo.value)
         vm.undo()
         assertFalse(vm.canUndo.value)
         assertTrue(vm.canRedo.value)
-        vm.addStroke(stroke(2))
+        vm.addStrokes(listOf(stroke(2)))
         assertFalse(vm.canRedo.value)
     }
 
@@ -220,7 +262,7 @@ class AnnotationViewModelTest {
         val firstOpening = ViewModelStore()
         val vm = viewModel(firstOpening)
         settle()
-        vm.addStroke(stroke(1))
+        vm.addStrokes(listOf(stroke(1)))
         vm.undo()
         firstOpening.clear() // the Sheet closes before the insert and delete have landed
         // The new opening's load reads between the insert (done at 10 ms) and the delete (done at 20 ms) unless it
@@ -260,7 +302,7 @@ class AnnotationViewModelTest {
     @Test fun failedWriteSetsSaveFailed() = runTest {
         dao.failWrites = true
         val vm = viewModel()
-        vm.addStroke(stroke(1))
+        vm.addStrokes(listOf(stroke(1)))
         settle()
         assertTrue(vm.saveFailed.value)
         assertEquals(listOf(1L), vm.ids())
@@ -269,7 +311,7 @@ class AnnotationViewModelTest {
     @Test fun failedDeleteOnUndoSetsSaveFailed() = runTest {
         dao.failDeletes = true
         val vm = viewModel()
-        vm.addStroke(stroke(1))
+        vm.addStrokes(listOf(stroke(1)))
         settle()
         assertFalse(vm.saveFailed.value)
 
@@ -291,10 +333,10 @@ class AnnotationViewModelTest {
     @Test fun strokeEraserRemovesWholeStrokesItTouchesAsOneUndoStep() = runTest {
         val vm = viewModel()
         settle()
-        vm.addStroke(line(1000, y = 0f))
-        vm.addStroke(line(2000, y = 50f))
-        vm.addStroke(line(3000, y = 0f, page = 1)) // same spot, other Page
-        vm.addStroke(line(4000, y = 0f))
+        vm.addStrokes(listOf(line(1000, y = 0f)))
+        vm.addStrokes(listOf(line(2000, y = 50f)))
+        vm.addStrokes(listOf(line(3000, y = 0f, page = 1))) // same spot, other Page
+        vm.addStrokes(listOf(line(4000, y = 0f)))
 
         // Down at (50, -20), across both strokes at y = 0, up past them.
         vm.eraseThrough(Eraser(EraseMode.Stroke, 4f), listOf(Offset(50f, -20f), Offset(50f, 20f)))
@@ -316,8 +358,8 @@ class AnnotationViewModelTest {
     @Test fun areaEraserCutsAStrokeIntoPiecesThatKeepItsPlace() = runTest {
         val vm = viewModel()
         settle()
-        vm.addStroke(line(1000, y = 0f))
-        vm.addStroke(line(2000, y = 5f)) // on top, out of the eraser's reach
+        vm.addStrokes(listOf(line(1000, y = 0f)))
+        vm.addStrokes(listOf(line(2000, y = 5f))) // on top, out of the eraser's reach
 
         vm.eraseThrough(Eraser(EraseMode.Area, 4f), listOf(Offset(50f, -3f), Offset(50f, 1f)))
         settle()
@@ -341,7 +383,7 @@ class AnnotationViewModelTest {
     @Test fun gestureThatCutsItsOwnPiecesIsStillOneStep() = runTest {
         val vm = viewModel()
         settle()
-        vm.addStroke(line(1000, y = 0f))
+        vm.addStrokes(listOf(line(1000, y = 0f)))
 
         // Two dabs in one gesture: the second cuts the right-hand piece of the first.
         vm.eraseThrough(Eraser(EraseMode.Area, 4f), listOf(Offset(30f, 0f), Offset(30f, 30f), Offset(70f, 30f), Offset(70f, 0f)))
@@ -367,8 +409,8 @@ class AnnotationViewModelTest {
     @Test fun cancelledEraseTakesItsErasingBack() = runTest {
         val vm = viewModel()
         settle()
-        vm.addStroke(line(1000, y = 0f))
-        vm.addStroke(line(2000, y = 50f))
+        vm.addStrokes(listOf(line(1000, y = 0f)))
+        vm.addStrokes(listOf(line(2000, y = 50f)))
         settle()
 
         vm.eraseThrough(Eraser(EraseMode.Area, 4f), listOf(Offset(50f, 0f)), cancelled = true)
@@ -382,7 +424,7 @@ class AnnotationViewModelTest {
     @Test fun failedEraseWriteSetsSaveFailed() = runTest {
         val vm = viewModel()
         settle()
-        vm.addStroke(line(1000, y = 0f))
+        vm.addStrokes(listOf(line(1000, y = 0f)))
         settle()
         dao.failDeletes = true
         vm.eraseThrough(Eraser(EraseMode.Stroke, 4f), listOf(Offset(50f, 0f)))
@@ -401,12 +443,12 @@ class AnnotationViewModelTest {
     @Test fun strokeHandedOverDuringAnEraseKeepsPlacesOnUndo() = runTest {
         val vm = viewModel()
         settle()
-        vm.addStroke(line(1000, y = 0f))
-        vm.addStroke(line(2000, y = 50f))
+        vm.addStrokes(listOf(line(1000, y = 0f)))
+        vm.addStrokes(listOf(line(2000, y = 50f)))
 
         vm.beginErase(Eraser(EraseMode.Stroke, 4f))
         vm.eraseAt(0, Offset(50f, 0f))
-        vm.addStroke(line(3000, y = 80f)) // a lift lost earlier, handed over mid-erase
+        vm.addStrokes(listOf(line(3000, y = 80f))) // a lift lost earlier, handed over mid-erase
         vm.endErase(cancelled = false)
         assertEquals(listOf(2000L, 3000L), vm.ids())
 
@@ -419,10 +461,28 @@ class AnnotationViewModelTest {
         assertEquals(listOf(2000L, 3000L), vm.ids())
     }
 
+    @Test fun splitStrokeHandedOverDuringAnEraseKeepsPlacesOnUndo() = runTest {
+        val vm = viewModel()
+        settle()
+        vm.addStrokes(listOf(line(1000, y = 0f)))
+
+        vm.beginErase(Eraser(EraseMode.Stroke, 4f))
+        vm.eraseAt(0, Offset(50f, 0f))
+        // A stroke across two Pages, its lift lost earlier, handed over mid-erase.
+        vm.addStrokes(listOf(line(3000, y = 80f, page = 0), line(3001, y = 80f, page = 1)))
+        vm.endErase(cancelled = false)
+        assertEquals(listOf(3000L, 3001L), vm.ids())
+
+        vm.undo()
+        settle()
+        assertEquals(listOf(1000L, 3000L, 3001L), vm.ids())
+        assertEquals(setOf(1000L, 3000L, 3001L), savedIds())
+    }
+
     @Test fun eraserThatLeftThePageDoesNotSweepFromWhereItLeft() = runTest {
         val vm = viewModel()
         settle()
-        vm.addStroke(line(1000, y = 50f))
+        vm.addStrokes(listOf(line(1000, y = 50f)))
 
         vm.beginErase(Eraser(EraseMode.Stroke, 4f))
         vm.eraseAt(0, Offset(50f, 0f))
@@ -435,7 +495,7 @@ class AnnotationViewModelTest {
     @Test fun highlighterUndoAndRedoKeepItAHighlighter() = runTest {
         val vm = viewModel()
         settle()
-        vm.addStroke(line(1000, y = 0f).copy(tool = StrokeTool.Highlighter))
+        vm.addStrokes(listOf(line(1000, y = 0f).copy(tool = StrokeTool.Highlighter)))
         vm.undo()
         vm.redo()
         settle()
@@ -450,9 +510,9 @@ class AnnotationViewModelTest {
         val vm = viewModel()
         settle()
         vm.onVisiblePages(setOf(0))
-        vm.addStroke(line(1000, y = 0f))
-        vm.addStroke(line(2000, y = 50f))
-        vm.addStroke(line(3000, y = 100f))
+        vm.addStrokes(listOf(line(1000, y = 0f)))
+        vm.addStrokes(listOf(line(2000, y = 50f)))
+        vm.addStrokes(listOf(line(3000, y = 100f)))
         vm.setTools(vm.tools.value.copy(chosen = ToolChoice.Lasso))
         settle()
         return vm
@@ -473,7 +533,7 @@ class AnnotationViewModelTest {
 
     @Test fun lassoSelectsTheStrokesMostlyInsideIt() = runTest {
         val vm = lassoViewModel()
-        vm.addStroke(line(4000, y = 50f, page = 1)) // same spot, other Page
+        vm.addStrokes(listOf(line(4000, y = 50f, page = 1))) // same spot, other Page
         vm.lassoDone(0, aroundMiddle)
         assertEquals(listOf(2000L), vm.selection.value?.ids)
 

@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
                                 val shownPages = remember(placements) { placements.mapTo(HashSet()) { it.pageIndex } }
                                 LaunchedEffect(shownPages) { annotations.onVisiblePages(shownPages) }
                                 InkLayer(
-                                    placements, strokes, tools.current, tools.eraser, annotations::addStroke, annotations,
+                                    placements, strokes, tools.current, tools.eraser, annotations::addStrokes, annotations,
                                     selection, annotations, selectionColour, Modifier.fillMaxSize(),
                                 )
                             },

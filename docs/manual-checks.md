@@ -62,3 +62,12 @@ All checks for #2–#6, and the fixes after the first check (palm rest, zoomed t
 - [ ] A resting hand (one or two contacts, still or shifting slightly) neither turns the page nor zooms.
 - [ ] Quick edge taps and flicks feel reliable: 250 ms for a tap and 400 ms for a flick aren't too strict.
 - [ ] A real pinch starts smoothly past the threshold, with no jump and no sticky dead zone.
+
+## #25 Strokes split at Page edges
+
+- [ ] Palm resting while the pen draws across from one Page to the other: both parts are saved and the palm leaves no mark.
+- [ ] Draw across two Pages while pinch-zooming or panning with the other hand: parts are cut where the Pages are at lift, so they may be misplaced (accepted).
+- [ ] Draw across two Pages at normal speed: the line shows whole while drawing, both parts stay after lift with no blink, and anything in the surround disappears at lift.
+- [ ] Side button pressed mid-stroke across Pages: the stroke finishes as drawn, then splits.
+- [ ] Lasso a part on one Page: only that part is selected.
+- [ ] A highlighter stroke across two Pages looks continuous at the edge.

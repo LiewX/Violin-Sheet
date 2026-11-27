@@ -229,12 +229,14 @@ class AnnotationViewModel(
         val frame: SelectionFrame,
     )
 
-    fun addStroke(stroke: InkStroke) {
-        drawnHere += stroke.id
+    /** One drawn stroke, as [parts]: one per Page it ran over (InkStroke.splitAtPages). One undo step takes them all. */
+    fun addStrokes(parts: List<InkStroke>) {
+        if (parts.isEmpty()) return
+        parts.mapTo(drawnHere) { it.id }
         // A stroke finished (another pointer, or a lift lost) while an erase runs goes on top of the list the erase
         // started from too, so the erase's places stay right.
-        erasing?.let { it.before = it.before + stroke }
-        history.perform(SwapStrokes(out = emptyList(), into = listOf(stroke)))
+        erasing?.let { it.before = it.before + parts }
+        history.perform(SwapStrokes(out = emptyList(), into = parts))
     }
 
     // Undo and redo wait for the pen to lift: an erase or a drag in progress is not in the history yet. Each clears the
