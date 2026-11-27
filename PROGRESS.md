@@ -4,7 +4,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 
 | Feature | Sub-feature | Status | Next Step |
 |---|---|---|---|
-| Setup | Docs: spec, glossary, ADR 0001–0003, agent skills, directory layout (`CLAUDE.md`), [workflow ideas](docs/workflow-ideas.md), [orchestration](.claude/skills/orchestrate/SKILL.md) with `model:` labels on #7–#21, `implementer`/`reviewer` agent types and the token review (2026-11-26); spec re-reviewed 2026-11-26 | Done | V1.0 is broken into GitHub issues #1–#21 (`ready-for-agent`, with blocking links) |
+| Setup | Docs: spec, glossary, ADR 0001–0003, agent skills, directory layout (`CLAUDE.md`), [workflow ideas](docs/workflow-ideas.md), [orchestration](.claude/skills/orchestrate/SKILL.md) with `model:` labels on #7–#21, `implementer`/`reviewer` agent types and the token review (2026-11-26); spec re-reviewed 2026-11-26; cleanup 2026-11-28 (workflow ideas 60–63 written, 65–66 added) | Done | V1.0 is broken into GitHub issues #1–#21 (`ready-for-agent`, with blocking links) |
 | Setup | Project skeleton (Kotlin Multiplatform modules, Compose Multiplatform, Room storage — ADR 0003) | Done | #1 verified on the Galaxy Tab S9+ 2026-11-26. Android Ink API 1.0 added in #6 |
 | 1. Annotation editing | Sheet import and list (rename, delete with undo bar, backup without PDFs + hash reattach) | Done | #1, #3. A real Google backup/restore is only simulated (PDF files deleted); see `docs/manual-checks.md` |
 | 1. Annotation editing | PDF Page rendering, zoom/pan, page turns, 1-up/2-up layout | Done | #2, #4 |
