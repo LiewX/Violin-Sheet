@@ -26,7 +26,7 @@ The main session is the **orchestrator**: it plans, delegates, reviews and commi
 | Role | How it runs |
 |---|---|
 | Orchestrator (main session) | Opus. At session start, check it is on Opus; if not, ask the user to run `/model opus` and wait |
-| Plan agent | `general-purpose` on Opus (the built-in Plan agent can't write files), told to design only: no code. Writes `handoffs/<N>-design.md` and replies with at most ~150 words plus the path |
+| Plan agent | `general-purpose` on Opus (the built-in Plan agent can't write files), told to design only: no code, and to grep the code before stating how something works today (Loop step 1). Writes `handoffs/<N>-design.md` and replies with at most ~150 words plus the path |
 | Implementer | `subagent_type: implementer`, `model` from the issue's `model:` label (`model:opus` → opus, `model:sonnet` → sonnet), fix rounds included (never downgraded to save tokens). One exception: a refactor-only part (see Splitting) runs on sonnet |
 | Reviewer | `subagent_type: reviewer`, `model: opus`, except the sonnet tier for small low-risk fixes outside issues (see Small fixes) |
 | Explore agent (finding files and symbols) | Haiku. Never coding; its results are facts (where things are), design decisions stay with Opus. The prompt asks for a reply of at most ~200 words of paths and line numbers |
@@ -46,6 +46,7 @@ Issues run one at a time: there is one tablet, and the issues block each other.
 
 0. **Clean tree.** `git status` must show no changes, so the commit holds only this issue. If it doesn't, stop and ask the user.
 1. **Plan.** Read the issue, the spec sections and the code it touches, using the Plan agent for design-heavy issues. Grill the user first if the issue forces a big design decision. If the issue needs the tablet, run `adb devices`. Write `handoffs/<N>-plan.md` from the template below. Design questions the docs don't settle stop the run here: ask the user.
+   - **Current behaviour:** before a plan says how something works today ("as today"), grep the code for it; if it isn't there, the plan lists it as new work (workflow idea 60).
    - **File size:** if the issue would push a source file past ~300 lines (test files exempt), the issue's first part splits it by feature area (e.g. `InkLayer.android.kt` → drawing, selection gestures, erase). No refactor-only issues for this.
    - **Tablet steps:** each one is written as a scripted check (`device-check` → One script per tablet step) with its expected result, so the implementer can rerun it after each fix.
    - **Skills:** name in the plan the skills relevant to the issue (`device-check` when it has tablet steps; e.g. `mattpocock-skills:tdd` for pure logic).
@@ -122,7 +123,7 @@ They live in `handoffs/` (git-ignored), so a cold subagent gets the whole contex
 <Skills to load for this issue, e.g. device-check. "None" if none.>
 
 ## Verify
-<Unit tests to add. Each tablet step: what the `check-<step>.sh` script does and its expected `check_db`/`ui`/`pixels` result. The user's stroke counts are recorded at the start, never given as numbers.>
+<Unit tests to add. Each tablet step: what the `check-<step>.sh` script does (starting from the Settings and screen state it sets up itself) and its expected `check_db`/`ui`/`pixels` result. The user's stroke counts are recorded at the start, never given as numbers.>
 
 ## Cases adb can't simulate
 <Input issues only: the multi-pointer cases (palm then pen, pen then finger, two hands) and how the design handles each. "None" if not an input issue.>
