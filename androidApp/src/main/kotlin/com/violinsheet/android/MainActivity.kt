@@ -87,17 +87,18 @@ class MainActivity : ComponentActivity() {
                         // Only whether there is a selection, so the toolbar doesn't recompose on every drag event.
                         val hasSelection by remember(annotations) { annotations.selection.map { it != null }.distinctUntilChanged() }
                             .collectAsState(initial = false)
+                        val canPaste by annotations.canPaste.collectAsState()
                         val selectionColour = MaterialTheme.colorScheme.primary
                         val panel = remember { ToolPanelState() }
                         SheetScreen(
                             viewModel,
                             overlay = { placements ->
                                 val selection by annotations.selection.collectAsState()
-                                val shownPages = remember(placements) { placements.mapTo(HashSet()) { it.pageIndex } }
+                                val shownPages = remember(placements) { placements.associate { it.pageIndex to it.pageSize } }
                                 LaunchedEffect(shownPages) { annotations.onVisiblePages(shownPages) }
                                 InkLayer(
                                     placements, strokes, tools.current, tools.eraser, annotations::addStrokes, annotations,
-                                    selection, annotations, selectionColour, Modifier.fillMaxSize(),
+                                    selection, annotations, selectionColour, annotations::onPenDown, Modifier.fillMaxSize(),
                                 )
                             },
                             toolbar = {
@@ -106,7 +107,7 @@ class MainActivity : ComponentActivity() {
                                     annotations::setTools,
                                     { annotations.setTools(it, save = false) },
                                     UndoControls(canUndo, canRedo, annotations::undo, annotations::redo),
-                                    LassoControls(hasSelection, annotations::deleteSelection),
+                                    LassoControls(hasSelection, canPaste, annotations::deleteSelection, annotations::copySelection, annotations::paste),
                                     panel,
                                     saveFailed,
                                 )

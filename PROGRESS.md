@@ -9,10 +9,10 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Sheet import and list (rename, delete with undo bar, backup without PDFs + hash reattach) | Done | #1, #3. A real Google backup/restore is only simulated (PDF files deleted); see `docs/manual-checks.md` |
 | 1. Annotation editing | PDF Page rendering, zoom/pan, page turns, 1-up/2-up layout | Done | #2, #4 |
 | 1. Annotation editing | Ink mode: pen, highlighter, eraser, side-button erase | Done | #6, #8 |
-| 1. Annotation editing | Ink lasso: move, resize, rotate, copy/paste within a Sheet, delete | In Progress | #10 done: lasso (fully inside; optional partly-enclosed switch), tap to select, move/resize/rotate/delete with undo. Copy/paste is #11 (next) |
+| 1. Annotation editing | Ink lasso: move, resize, rotate, copy/paste within a Sheet, delete | Done | #10 lasso, tap to select, move/resize/rotate/delete; #11 Copy/Paste (paste on the pen's last Page, steps on its source Page, clamped/scaled to fit). Next: #12 after the toolbar layout is chosen from the mockup board |
 | 1. Annotation editing | Colour picker and size sliders | Done | #9: HSV picker and size sliders in a panel above the toolbar; the same picker on the Settings page. Token use to compare with #8 at the next cleanup |
 | 1. Annotation editing | Saved colour palettes and editable size presets | Done | #22: palettes with + Add colour and editing in the Sheet; Settings → Ink edits palettes (tap to edit or delete, hold and drag to reorder, Undo) and size presets; Sheets start on the first colour and middle preset (no stored defaults) |
-| 1. Annotation editing | Fixes from use (2026-11-27): toolbar keeps one width, palm rejection for navigation, strokes split at Page edges | Done | #23 toolbar, #24 palm rules, #25 strokes split at Page edges. Next: #11 |
+| 1. Annotation editing | Fixes from use (2026-11-27): toolbar keeps one width, palm rejection for navigation, strokes split at Page edges | Done | #23 toolbar, #24 palm rules, #25 strokes split at Page edges |
 | 1. Annotation editing | Symbols: fingerings | Not Started | — |
 | 1. Annotation editing | Symbols: articulations | Not Started | — |
 | 1. Annotation editing | Symbols: bowings | Not Started | — |

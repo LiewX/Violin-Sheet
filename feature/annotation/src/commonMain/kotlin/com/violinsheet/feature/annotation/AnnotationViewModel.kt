@@ -63,13 +63,18 @@ class AnnotationViewModel(
     /** A change couldn't be saved: the screen shows it, but reopening the Sheet wouldn't. */
     val saveFailed: StateFlow<Boolean> = _saveFailed.asStateFlow()
 
-    private val lasso = LassoSelection(_strokes, history, tools, { remove, add -> watch(ink.replace(sheetId, remove, add)) }) { strokes, frame ->
-        SwapStrokes(out = strokes, into = emptyList(), selectOnRevert = frame)
-    }
-    val selection: StateFlow<Selection?> = lasso.selection
-
     /** Ids of strokes drawn while this Sheet is open: for those, memory wins over what the database load returns. */
     private val drawnHere = HashSet<Long>()
+
+    private val lasso = LassoSelection(
+        _strokes, history, tools, { remove, add -> watch(ink.replace(sheetId, remove, add)) },
+        { strokes, frame -> SwapStrokes(out = strokes, into = emptyList(), selectOnRevert = frame) },
+        newStrokeId, drawnHere,
+    )
+    val selection: StateFlow<Selection?> = lasso.selection
+
+    /** Something has been copied, so Paste has something to do. */
+    val canPaste: StateFlow<Boolean> = lasso.canPaste
 
     private var erasing: EraseGesture? = null
 
@@ -97,8 +102,19 @@ class AnnotationViewModel(
         toolsState.set(tools, save)
     }
 
-    /** The Pages on screen are now [pages] (a page turn): a selection on a Page no longer shown ends. */
-    fun onVisiblePages(pages: Set<Int>) = lasso.onVisiblePages(pages)
+    /** The Pages on screen are now [pages], each with its size in Page points (a page turn): a selection on a Page no longer shown ends. */
+    fun onVisiblePages(pages: Map<Int, Size>) = lasso.onVisiblePages(pages)
+
+    /** The pen went down on Page [pageIndex], with any tool: Paste goes there. */
+    fun onPenDown(pageIndex: Int) = lasso.onPenDown(pageIndex)
+
+    fun copySelection() = lasso.copySelection()
+
+    fun paste() {
+        // Like undo: a paste waits for the pen to lift, as an erase or a drag in progress is not in the history yet.
+        if (erasing != null || lasso.dragging) return
+        lasso.paste()
+    }
 
     override fun lassoDone(pageIndex: Int, pagePoints: List<Offset>) = lasso.lassoDone(pageIndex, pagePoints)
 
@@ -269,25 +285,5 @@ class AnnotationViewModel(
         }
 
         fun save(removeIds: Set<Long>, add: List<InkStroke>) = watch(ink.replace(sheetId, removeIds.toList(), add))
-    }
-}
-
-/** Items taken out of a list, each with its place in the list it was taken from (in list order). */
-internal class Places<T>(val items: List<IndexedValue<T>>, val sizeWithout: Int)
-
-/** This list without the items matching [taken], and where those were. */
-internal fun <T> List<T>.takeOut(taken: (T) -> Boolean): Pair<List<T>, Places<T>> {
-    val found = withIndex().filter { taken(it.value) }
-    return filterNot(taken) to Places(found, size - found.size)
-}
-
-/**
- * Puts the [places] items back where they were. Assumes the only change to the list since they were taken out is
- * saved strokes loading in front, so every place shifts by how much the list grew.
- */
-internal fun <T> List<T>.putBack(places: Places<T>): List<T> {
-    val shift = size - places.sizeWithout
-    return toMutableList().apply {
-        for ((place, item) in places.items) add((place + shift).coerceIn(0, size), item)
     }
 }

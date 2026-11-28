@@ -89,6 +89,8 @@ internal fun Modifier.penInput(state: InkLayerState, hostView: View): Modifier =
                             // Decided once, at pen down: pressing or releasing the side button mid-gesture changes
                             // nothing until the pen lifts.
                             val chosen = toolForGesture(state.tool, state.eraser, event.eraseHeld())
+                            // Whatever the tool, the pen touching a Page is where a paste goes.
+                            state.pageAt(change.position)?.let { state.onPenDown(it.pageIndex) }
                             if (chosen is Lasso) {
                                 penPointer = change.id
                                 event.motionEvent?.let(hostView::requestUnbufferedDispatch)

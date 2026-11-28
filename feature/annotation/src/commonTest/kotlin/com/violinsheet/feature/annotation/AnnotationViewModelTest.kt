@@ -546,11 +546,13 @@ class AnnotationViewModelTest {
 
     private val pageSize = Size(200f, 300f)
 
+    private fun pages(vararg index: Int) = index.associateWith { pageSize }
+
     /** Lines 1000, 2000 and 3000 at y = 0, 50 and 100 on Page 0 (on screen), with the Lasso tool chosen. */
     private fun TestScope.lassoViewModel(): AnnotationViewModel {
         val vm = viewModel()
         settle()
-        vm.onVisiblePages(setOf(0))
+        vm.onVisiblePages(pages(0))
         vm.addStrokes(listOf(line(1000, y = 0f)))
         vm.addStrokes(listOf(line(2000, y = 50f)))
         vm.addStrokes(listOf(line(3000, y = 100f)))
@@ -684,9 +686,9 @@ class AnnotationViewModelTest {
     @Test fun aSelectionEndsWhenItsPageLeavesTheScreen() = runTest {
         val vm = lassoViewModel()
         vm.lassoDone(0, aroundMiddle)
-        vm.onVisiblePages(setOf(0, 1)) // zoom or 2-up: Page 0 still shown
+        vm.onVisiblePages(pages(0, 1)) // zoom or 2-up: Page 0 still shown
         assertEquals(listOf(2000L), vm.selection.value?.ids)
-        vm.onVisiblePages(setOf(1, 2))
+        vm.onVisiblePages(pages(1, 2))
         assertNull(vm.selection.value)
     }
 
@@ -695,7 +697,7 @@ class AnnotationViewModelTest {
         vm.lassoDone(0, aroundMiddle)
         vm.moveMiddle(by = Offset(10f, 20f))
         settle()
-        vm.onVisiblePages(setOf(1))
+        vm.onVisiblePages(pages(1))
 
         vm.undo()
         settle()
@@ -774,5 +776,118 @@ class AnnotationViewModelTest {
         vm.undo()
         assertEquals(listOf(1000L, 2000L), vm.ids())
         assertNull(vm.selection.value)
+    }
+
+    // Lasso copy and paste.
+
+    private fun AnnotationViewModel.copyMiddle() {
+        lassoDone(0, aroundMiddle)
+        copySelection()
+    }
+
+    private fun AnnotationViewModel.firstOf(id: Long) = strokes.value.single { it.id == id }.points.first()
+
+    @Test fun pasteAddsCopiesWithNewIdsOnTopAndSelectsThem() = runTest {
+        val vm = lassoViewModel()
+        vm.copyMiddle()
+        vm.paste()
+        settle()
+        assertEquals(listOf(1000L, 2000L, 3000L, 1_000_000L), vm.ids())
+        assertEquals(setOf(1000L, 2000L, 3000L, 1_000_000L), savedIds())
+        assertEquals(InkPoint(12f, 62f, 0.5f, 0), vm.firstOf(1_000_000L))
+        assertEquals(0, vm.strokes.value.last().pageIndex)
+        assertEquals(listOf(1_000_000L), vm.selection.value?.ids)
+        assertEquals(Offset(62f, 62f), vm.selection.value?.frame?.center)
+    }
+
+    @Test fun undoRemovesAPasteAndRedoBringsItBackSelected() = runTest {
+        val vm = lassoViewModel()
+        vm.copyMiddle()
+        vm.paste()
+        vm.undo()
+        settle()
+        assertEquals(listOf(1000L, 2000L, 3000L), vm.ids())
+        assertEquals(setOf(1000L, 2000L, 3000L), savedIds())
+        assertNull(vm.selection.value)
+
+        vm.redo()
+        settle()
+        assertEquals(listOf(1000L, 2000L, 3000L, 1_000_000L), vm.ids())
+        assertEquals(setOf(1000L, 2000L, 3000L, 1_000_000L), savedIds())
+        assertEquals(listOf(1_000_000L), vm.selection.value?.ids)
+    }
+
+    @Test fun pasteWorksWithNothingSelectedAndAfterAToolSwitch() = runTest {
+        val vm = lassoViewModel()
+        assertFalse(vm.canPaste.value)
+        vm.paste()
+        assertEquals(3, vm.strokes.value.size)
+
+        vm.copyMiddle()
+        assertTrue(vm.canPaste.value)
+        vm.setTools(vm.tools.value.copy(chosen = ToolChoice.Pen))
+        vm.setTools(vm.tools.value.copy(chosen = ToolChoice.Lasso))
+        assertNull(vm.selection.value)
+        vm.paste()
+        assertEquals(4, vm.strokes.value.size)
+        assertEquals(listOf(1_000_000L), vm.selection.value?.ids)
+    }
+
+    @Test fun copyIsNotAnUndoStep() = runTest {
+        val vm = lassoViewModel()
+        vm.copyMiddle()
+        vm.undo()
+        assertEquals(listOf(1000L, 2000L), vm.ids())
+    }
+
+    @Test fun pasteGoesToTheLastPenPageIfShownElseTheFirstShownPage() = runTest {
+        val vm = lassoViewModel()
+        vm.onVisiblePages(pages(0, 1))
+        vm.copyMiddle()
+        vm.onPenDown(1)
+        vm.paste()
+        assertEquals(1, vm.strokes.value.last().pageIndex)
+        assertEquals(InkPoint(0.5f, 50f, 0.5f, 0), vm.firstOf(1_000_000L)) // other Page: no offset, only nudged in (the line's edge was 0.5 off the Page)
+
+        vm.onVisiblePages(pages(2, 3)) // a page turn: Page 1 is gone
+        vm.paste()
+        assertEquals(2, vm.strokes.value.last().pageIndex)
+    }
+
+    @Test fun secondPasteOnTheSourcePageStepsFurtherAndANewCopyResetsIt() = runTest {
+        val vm = lassoViewModel()
+        vm.copyMiddle()
+        vm.paste()
+        vm.paste()
+        assertEquals(InkPoint(24f, 74f, 0.5f, 0), vm.firstOf(1_000_001L))
+
+        vm.lassoDone(0, aroundMiddle)
+        vm.copySelection()
+        vm.paste()
+        assertEquals(InkPoint(12f, 62f, 0.5f, 0), vm.firstOf(1_000_002L))
+    }
+
+    @Test fun undoingAPasteStepsTheOffsetBackAndRedoForward() = runTest {
+        val vm = lassoViewModel()
+        vm.copyMiddle()
+        vm.paste()
+        vm.undo()
+        vm.paste() // lands where the undone paste did
+        assertEquals(InkPoint(12f, 62f, 0.5f, 0), vm.firstOf(1_000_001L))
+        vm.undo()
+        vm.redo()
+        vm.paste() // the redone paste stands again, so this one is further
+        assertEquals(InkPoint(24f, 74f, 0.5f, 0), vm.firstOf(1_000_002L))
+    }
+
+    @Test fun pasteWaitsForADragInProgress() = runTest {
+        val vm = lassoViewModel()
+        vm.copyMiddle()
+        vm.beginDrag(DragKind.Move, Offset(50f, 50f), pageSize)
+        vm.paste()
+        assertEquals(3, vm.strokes.value.size)
+        vm.endDrag(cancelled = true)
+        vm.paste()
+        assertEquals(4, vm.strokes.value.size)
     }
 }

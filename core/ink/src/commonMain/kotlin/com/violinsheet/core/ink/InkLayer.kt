@@ -11,7 +11,8 @@ import androidx.compose.ui.geometry.Size
  * one stroke per Page it ran over (splitAtPages; never an empty list, and nothing for a stroke off every Page), an
  * erase gesture to [erase], both in Page coordinates. Holding the pen's erase action erases with [eraser] instead
  * (toolForGesture). With the Lasso tool the pen selects and drags [selection] through [lasso]; the frame is drawn in
- * [selectionColour]. Only the pen draws, erases and selects; finger touches pass through to navigation (CLAUDE.md:
+ * [selectionColour]. Every pen down on a Page, with any tool, is reported to [onPenDown]. Only the pen draws, erases
+ * and selects; finger touches pass through to navigation (CLAUDE.md:
  * input split).
  * Platform code: native low-latency ink per platform (ADR 0002).
  */
@@ -26,6 +27,7 @@ expect fun InkLayer(
     selection: Selection?,
     lasso: LassoInput,
     selectionColour: Color,
+    onPenDown: (pageIndex: Int) -> Unit,
     modifier: Modifier = Modifier,
 )
 

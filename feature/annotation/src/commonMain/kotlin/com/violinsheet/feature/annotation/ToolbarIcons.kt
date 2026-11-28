@@ -64,3 +64,18 @@ internal val DeleteIcon = icon(
     "Delete",
     "M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V7H6v12zM19,4h-3.5l-1,-1h-5l-1,1H5v2h14V4z",
 )
+
+// Material "content copy".
+internal val CopyIcon = icon(
+    "Copy",
+    "M16,1H4C2.9,1 2,1.9 2,3v14h2V3h12V1zM19,5H8C6.9,5 6,5.9 6,7v14c0,1.1 0.9,2 2,2h11c1.1,0 2,-0.9 2,-2V7" +
+        "C21,5.9 20.1,5 19,5zM19,21H8V7h11V21z",
+)
+
+// Material "content paste".
+internal val PasteIcon = icon(
+    "Paste",
+    "M19,2h-4.18C14.4,0.84 13.3,0 12,0c-1.3,0 -2.4,0.84 -2.82,2H5C3.9,2 3,2.9 3,4v16c0,1.1 0.9,2 2,2h14" +
+        "c1.1,0 2,-0.9 2,-2V4C21,2.9 20.1,2 19,2zM12,2c0.55,0 1,0.45 1,1s-0.45,1 -1,1s-1,-0.45 -1,-1S11.45,2 12,2z" +
+        "M19,20H5V4h2v3h10V4h2V20z",
+)

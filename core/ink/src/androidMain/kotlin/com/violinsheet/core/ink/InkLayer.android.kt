@@ -54,10 +54,11 @@ actual fun InkLayer(
     selection: Selection?,
     lasso: LassoInput,
     selectionColour: Color,
+    onPenDown: (pageIndex: Int) -> Unit,
     modifier: Modifier,
 ) {
     val painter = remember { StrokePainter() }
-    val state = remember { InkLayerState(placements, tool, eraser, onStrokes, erase, selection, lasso) }
+    val state = remember { InkLayerState(placements, tool, eraser, onStrokes, erase, selection, lasso, onPenDown) }
     val ids = remember(strokes) { strokes.mapTo(HashSet()) { it.id }.also(painter::keepOnly) }
     state.placements = placements
     state.tool = tool
@@ -66,6 +67,7 @@ actual fun InkLayer(
     state.erase = erase
     state.selection = selection
     state.lasso = lasso
+    state.onPenDown = onPenDown
     state.ids = ids
     val selectedIds = remember(selection?.ids) { selection?.ids?.toHashSet().orEmpty() }
     // Reused by every frame of a lasso or a drag, rather than allocated per draw.

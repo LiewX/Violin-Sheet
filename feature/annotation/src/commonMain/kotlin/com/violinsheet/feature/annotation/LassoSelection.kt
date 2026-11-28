@@ -6,11 +6,13 @@ import androidx.compose.ui.geometry.Size
 import com.violinsheet.core.ink.DragKind
 import com.violinsheet.core.ink.InkStroke
 import com.violinsheet.core.ink.LassoInput
+import com.violinsheet.core.ink.PASTE_STEP
 import com.violinsheet.core.ink.Selection
 import com.violinsheet.core.ink.SelectionFrame
 import com.violinsheet.core.ink.inkBounds
 import com.violinsheet.core.ink.lassoSelects
 import com.violinsheet.core.ink.move
+import com.violinsheet.core.ink.pastePlacement
 import com.violinsheet.core.ink.resize
 import com.violinsheet.core.ink.rotate
 import com.violinsheet.core.ink.strokeAt
@@ -31,6 +33,10 @@ internal class LassoSelection(
     private val save: (removeIds: List<Long>, add: List<InkStroke>) -> Unit,
     /** The command that deletes [strokes] and, undone, selects them again in [frame] (reselect). */
     private val deleteCommand: (strokes: List<InkStroke>, frame: SelectionFrame) -> Command,
+    /** Gives the id of a pasted stroke. */
+    private val newStrokeId: () -> Long,
+    /** Ids of strokes made here, which memory wins for over a database load in flight. */
+    private val drawnHere: MutableSet<Long>,
 ) : LassoInput {
     private val _selection = MutableStateFlow<Selection?>(null)
     val selection: StateFlow<Selection?> = _selection.asStateFlow()
@@ -40,14 +46,51 @@ internal class LassoSelection(
     /** A drag on the selection is in progress: it is not in the history yet. */
     val dragging: Boolean get() = drag != null
 
-    /** The Pages on screen: a selection lasts only while its Page is shown. */
-    private var visiblePages = emptySet<Int>()
+    /** The Pages on screen, with their sizes (Page points): a selection lasts only while its Page is shown. */
+    private var visiblePages = emptyMap<Int, Size>()
 
-    /** The Pages on screen are now [pages] (a page turn): a selection on a Page no longer shown ends. */
-    fun onVisiblePages(pages: Set<Int>) {
+    /** The Page the pen last touched, whatever the tool. Fingers never set it. */
+    private var lastPenPage: Int? = null
+
+    private var copied: Copy? = null
+    private val _canPaste = MutableStateFlow(false)
+
+    /** Something has been copied since this Sheet was opened. */
+    val canPaste: StateFlow<Boolean> = _canPaste.asStateFlow()
+
+    /** The Pages on screen are now [pages], each with its size (a page turn): a selection on a Page no longer shown ends. */
+    fun onVisiblePages(pages: Map<Int, Size>) {
         visiblePages = pages
         val selected = _selection.value ?: return
         if (selected.pageIndex !in pages) clearSelection()
+    }
+
+    /** The pen went down on Page [pageIndex]: the next paste goes there if it is still shown. */
+    fun onPenDown(pageIndex: Int) {
+        lastPenPage = pageIndex
+    }
+
+    /** Copies the selected strokes and their frame; not an undo step. A new copy replaces the last. */
+    fun copySelection() {
+        val selection = _selection.value ?: return
+        val ids = selection.ids.toHashSet()
+        val picked = strokes.value.filter { it.id in ids }
+        if (picked.isEmpty()) return
+        copied = Copy(picked, selection.frame, selection.pageIndex)
+        _canPaste.value = true
+    }
+
+    /** Pastes the copy on the last pen-touched Page (the first shown one if that is gone), selected, as one undo step. */
+    fun paste() {
+        val copy = copied ?: return
+        val target = lastPenPage?.takeIf { it in visiblePages } ?: visiblePages.keys.minOrNull() ?: return
+        val pageSize = visiblePages.getValue(target)
+        val onSource = target == copy.sourcePage
+        val offset = if (onSource) Offset(PASTE_STEP, PASTE_STEP) * (copy.pastes + 1).toFloat() else Offset.Zero
+        val transform = pastePlacement(inkBounds(copy.strokes), pageSize, offset)
+        val pasted = copy.strokes.map { transform.apply(it).copy(id = newStrokeId(), pageIndex = target) }
+        pasted.mapTo(drawnHere) { it.id }
+        history.perform(PasteStrokes(pasted, copy.frame.transformed(transform), copy.takeIf { onSource }))
     }
 
     override fun lassoDone(pageIndex: Int, pagePoints: List<Offset>) =
@@ -115,6 +158,11 @@ internal class LassoSelection(
         _selection.value = Selection(pageIndex, ids, frame, null)
     }
 
+    /** What was copied: [strokes] as they were, their [frame], the Page they were on, and how many pastes landed there since. */
+    private class Copy(val strokes: List<InkStroke>, val frame: SelectionFrame, val sourcePage: Int) {
+        var pastes = 0
+    }
+
     /** One drag on the selection, pen down to up: what it started from. */
     private class Drag(
         val kind: DragKind,
@@ -125,6 +173,30 @@ internal class LassoSelection(
         val box: Rect,
         val frame: SelectionFrame,
     )
+
+    /** A paste: adds [pasted] on top and selects them in [frame]; undone, takes them out again. */
+    private inner class PasteStrokes(
+        private val pasted: List<InkStroke>,
+        private val frame: SelectionFrame,
+        /** The copy, if this paste is on its own Page: it counts the pastes standing there, undone ones not. */
+        private val onSourceOf: Copy?,
+    ) : Command {
+        private val ids = pasted.map { it.id }
+
+        override fun apply() {
+            onSourceOf?.let { it.pastes++ }
+            strokes.value = strokes.value + pasted
+            save(emptyList(), pasted)
+            reselect(pasted.first().pageIndex, ids, frame)
+        }
+
+        override fun revert() {
+            onSourceOf?.let { it.pastes-- }
+            val gone = ids.toHashSet()
+            strokes.value = strokes.value.filter { it.id !in gone }
+            save(ids, emptyList())
+        }
+    }
 
     /**
      * A lasso move, resize or rotate: [before] become [after], the same ids with the transform baked into their points.

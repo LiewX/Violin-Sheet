@@ -90,3 +90,10 @@ All checks for #2–#6, and the fixes after the first check (palm rest, zoomed t
 - [ ] TalkBack reads the toolbar's swatches and presets as "selected".
 - [ ] Restore default palettes and presets asks no confirmation. Is a one-tap restore OK?
 - [ ] After the update, a Sheet opens with the pen on the first pen palette colour and the middle size; dragging a colour to the front in Settings changes what the next Sheet starts with.
+
+## #11 Lasso copy and paste
+
+- [ ] With a Sheet with several Pages: copy a lasso selection on Page 1, turn to Page 3, tap Paste: strokes land at the same place, selected, and Undo removes them in one step.
+- [ ] Paste with nothing selected after switching tools (Pen, back to Lasso): Paste still works.
+- [ ] Pen-down on a Page with the Highlighter or Eraser, then Lasso and Paste: the paste goes to that Page.
+- [ ] Palm resting on another Page does not change where Paste lands.

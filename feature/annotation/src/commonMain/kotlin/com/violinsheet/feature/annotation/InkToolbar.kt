@@ -35,8 +35,14 @@ import androidx.compose.ui.unit.dp
 /** What the toolbar's Undo and Redo buttons do, and whether each has anything to do. */
 class UndoControls(val canUndo: Boolean, val canRedo: Boolean, val onUndo: () -> Unit, val onRedo: () -> Unit)
 
-/** What the Lasso tool's buttons do, and whether there is a selection for them to act on. */
-data class LassoControls(val hasSelection: Boolean, val onDelete: () -> Unit)
+/** What the Lasso tool's buttons do: Delete and Copy need a selection, Paste something copied. */
+data class LassoControls(
+    val hasSelection: Boolean,
+    val canPaste: Boolean,
+    val onDelete: () -> Unit,
+    val onCopy: () -> Unit,
+    val onPaste: () -> Unit,
+)
 
 /**
  * The slim palette at the bottom edge: Undo and Redo, the tool switch (Pen, Highlighter, Eraser, Lasso), then the chosen
@@ -101,8 +107,16 @@ fun InkToolbar(
                             tools.highlighter, choice, tools.palettes.highlighter, tools.sizes.highlighter, highlighterScroll, panel,
                         ) { onTools(tools.copy(highlighter = it)) }
                         ToolChoice.Eraser -> EraserPresets(tools.eraser, tools.sizes.eraser, panel) { onTools(tools.copy(eraser = it)) }
-                        ToolChoice.Lasso -> IconButton(onClick = lasso.onDelete, enabled = lasso.hasSelection, modifier = Modifier.size(40.dp)) {
-                            Icon(DeleteIcon, contentDescription = "Delete selection")
+                        ToolChoice.Lasso -> {
+                            IconButton(onClick = lasso.onDelete, enabled = lasso.hasSelection, modifier = Modifier.size(40.dp)) {
+                                Icon(DeleteIcon, contentDescription = "Delete selection")
+                            }
+                            IconButton(onClick = lasso.onCopy, enabled = lasso.hasSelection, modifier = Modifier.size(40.dp)) {
+                                Icon(CopyIcon, contentDescription = "Copy selection")
+                            }
+                            IconButton(onClick = lasso.onPaste, enabled = lasso.canPaste, modifier = Modifier.size(40.dp)) {
+                                Icon(PasteIcon, contentDescription = "Paste")
+                            }
                         }
                     }
                 }

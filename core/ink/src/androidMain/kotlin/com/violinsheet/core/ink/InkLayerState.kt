@@ -20,6 +20,7 @@ internal class InkLayerState(
     erase: EraseInput,
     selection: Selection?,
     lasso: LassoInput,
+    onPenDown: (pageIndex: Int) -> Unit,
 ) {
     var placements by mutableStateOf(placements)
     var tool by mutableStateOf(tool)
@@ -28,6 +29,7 @@ internal class InkLayerState(
     var erase by mutableStateOf(erase)
     var selection by mutableStateOf(selection)
     var lasso by mutableStateOf(lasso)
+    var onPenDown by mutableStateOf(onPenDown)
 
     /** The ids of the strokes InkLayer was given. */
     var ids by mutableStateOf(emptySet<Long>())

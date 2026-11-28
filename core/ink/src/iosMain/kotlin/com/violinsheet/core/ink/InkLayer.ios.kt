@@ -16,5 +16,6 @@ actual fun InkLayer(
     selection: Selection?,
     lasso: LassoInput,
     selectionColour: Color,
+    onPenDown: (pageIndex: Int) -> Unit,
     modifier: Modifier,
 ) = Unit
