@@ -55,4 +55,9 @@ When done, write `handoffs/<N>-report.md` (after a split: `<N>-report-<part>.md`
 
 ## What slowed me down or went wrong
 <Tool, doc or rule friction, as `| | <problem> | <concrete fix> | open |` rows ready to append to the docs/workflow-ideas.md table (the orchestrator fills in the number).>
+
+## For later parts
+<Split issues only (not the last part): about 20 lines on what changed and where (files, new types and functions), what later parts should reuse, and anything they must not undo. Omit for an unsplit issue.>
 ```
+
+Keep `## For later parts` as the report's last section. In a split issue, read only the earlier parts' `## For later parts` sections, with `sed -n '/^## For later parts/,$p' handoffs/<N>-report-<part>.md` (the Read tool would load the whole report), and open a full earlier report only where you need its detail. The last part's implementer, which also fixes the review findings for the whole issue, may read full reports where a finding needs them.
