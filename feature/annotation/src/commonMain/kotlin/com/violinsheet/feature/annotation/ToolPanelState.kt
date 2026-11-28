@@ -27,6 +27,9 @@ sealed interface Panel {
 
     /** The slider for Size preset [index] (0 small, 1 medium, 2 large), the selected one. */
     data class EditPreset(val index: Int) : Panel
+
+    /** Edit mode's six Symbol groups: opened by the Symbol slot's group switch. */
+    data object SymbolGroup : Panel
 }
 
 /**
@@ -36,7 +39,7 @@ sealed interface Panel {
 fun InkTools.withColourSaved(panel: Panel, colour: Int): InkTools = when (panel) {
     is Panel.EditColour -> withColourReplaced(panel.argb, colour)
     Panel.AddColour -> withColourAdded(colour)
-    Panel.Lasso, is Panel.EditPreset -> this
+    Panel.Lasso, is Panel.EditPreset, Panel.SymbolGroup -> this
 }
 
 /**

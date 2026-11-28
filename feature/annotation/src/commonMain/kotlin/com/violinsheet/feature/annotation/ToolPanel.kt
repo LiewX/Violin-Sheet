@@ -40,9 +40,12 @@ import com.violinsheet.feature.settings.StepSlider
 import com.violinsheet.feature.settings.SwitchRow
 import com.violinsheet.feature.settings.formatPoints
 
-/** The panel above the toolbar, never a dialog: the colour picker, a Size preset's slider, or the lasso's rule. */
+/**
+ * The panel above the toolbar, never a dialog, showing the open [Panel] through [content] (the mode's panel content:
+ * [InkPanel], or Edit mode's group list). Nothing while no panel is open.
+ */
 @Composable
-internal fun ToolPanel(panel: ToolPanelState, tools: InkTools, onTools: (InkTools) -> Unit, onToolsLive: (InkTools) -> Unit) {
+internal fun ToolPanel(panel: ToolPanelState, content: @Composable (Panel) -> Unit) {
     val open = panel.open ?: return
     Surface(
         shape = RoundedCornerShape(24.dp),
@@ -52,14 +55,21 @@ internal fun ToolPanel(panel: ToolPanelState, tools: InkTools, onTools: (InkTool
     ) {
         // As wide as its content: the colour picker sets it; the slider and the switch are given PanelWidth.
         Column(Modifier.padding(16.dp).width(IntrinsicSize.Max), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            when (open) {
-                Panel.Lasso -> SwitchRow(InkSettings.includePartlyEnclosed.title, tools.includePartlyEnclosed, modifier = Modifier.width(PanelWidth)) {
-                    onTools(tools.copy(includePartlyEnclosed = it))
-                }
-                Panel.AddColour, is Panel.EditColour -> ColourPanel(panel, open, tools, onTools)
-                is Panel.EditPreset -> PresetPanel(panel, open.index, tools, onTools, onToolsLive)
-            }
+            content(open)
         }
+    }
+}
+
+/** Ink mode's panel content: the colour picker, a Size preset's slider, or the lasso's rule. */
+@Composable
+internal fun InkPanel(open: Panel, panel: ToolPanelState, tools: InkTools, onTools: (InkTools) -> Unit, onToolsLive: (InkTools) -> Unit) {
+    when (open) {
+        Panel.Lasso -> SwitchRow(InkSettings.includePartlyEnclosed.title, tools.includePartlyEnclosed, modifier = Modifier.width(PanelWidth)) {
+            onTools(tools.copy(includePartlyEnclosed = it))
+        }
+        Panel.AddColour, is Panel.EditColour -> ColourPanel(panel, open, tools, onTools)
+        is Panel.EditPreset -> PresetPanel(panel, open.index, tools, onTools, onToolsLive)
+        Panel.SymbolGroup -> Unit // Edit mode's; switching mode closes the panel.
     }
 }
 

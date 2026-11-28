@@ -13,7 +13,8 @@ import androidx.compose.ui.geometry.Size
  * (toolForGesture). With the Lasso tool the pen selects and drags [selection] through [lasso]; the frame is drawn in
  * [selectionColour]. Every pen down on a Page, with any tool, is reported to [onPenDown]. Only the pen draws, erases
  * and selects; finger touches pass through to navigation (CLAUDE.md:
- * input split).
+ * input split). With [penEnabled] off (Edit mode) the strokes are still drawn but the pen does nothing here, the side
+ * button included.
  * Platform code: native low-latency ink per platform (ADR 0002).
  */
 @Composable
@@ -28,6 +29,7 @@ expect fun InkLayer(
     lasso: LassoInput,
     selectionColour: Color,
     onPenDown: (pageIndex: Int) -> Unit,
+    penEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 )
 

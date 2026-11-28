@@ -55,6 +55,7 @@ actual fun InkLayer(
     lasso: LassoInput,
     selectionColour: Color,
     onPenDown: (pageIndex: Int) -> Unit,
+    penEnabled: Boolean,
     modifier: Modifier,
 ) {
     val painter = remember { StrokePainter() }
@@ -77,7 +78,7 @@ actual fun InkLayer(
     val lassoDash = remember(density) { with(density) { PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx())) } }
     val hostView = LocalView.current
 
-    Box(modifier.penInput(state, hostView)) {
+    Box(if (penEnabled) modifier.penInput(state, hostView) else modifier) {
         Canvas(Modifier.fillMaxSize()) {
             drawIntoCanvas { painter.draw(it.nativeCanvas, placements, strokes, selection, selectedIds) }
             // Until then the low-latency view shows the wet stroke as drawn, untrimmed and uncut. It goes once all its

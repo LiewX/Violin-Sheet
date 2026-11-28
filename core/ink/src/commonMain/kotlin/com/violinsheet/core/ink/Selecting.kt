@@ -96,7 +96,8 @@ fun rotateHandle(frame: SelectionFrame, placement: PagePlacement, distancePx: Fl
 /**
  * What [screenPoint] hits on [frame] as shown at [placement] (SelectionFrame.shownAt, each side at least [minSidePx]):
  * the rotate handle first (rotateHandle), then a corner, both within [handleRadiusPx]; then the inside, the frame
- * widened by [insideMarginPx]; else outside.
+ * widened by [insideMarginPx]; else outside. With [rotatable] false (a Symbol's frame) there is no rotate handle, so
+ * [FrameHit.RotateHandle] never comes back.
  */
 fun hitTest(
     frame: SelectionFrame,
@@ -106,10 +107,13 @@ fun hitTest(
     rotateHandleDistancePx: Float,
     insideMarginPx: Float,
     minSidePx: Float,
+    rotatable: Boolean = true,
 ): FrameHit {
     val shown = frame.shownAt(placement, minSidePx)
     val reach = handleRadiusPx * handleRadiusPx
-    if ((rotateHandle(shown, placement, rotateHandleDistancePx) - screenPoint).getDistanceSquared() <= reach) return FrameHit.RotateHandle
+    if (rotatable && (rotateHandle(shown, placement, rotateHandleDistancePx) - screenPoint).getDistanceSquared() <= reach) {
+        return FrameHit.RotateHandle
+    }
     shown.corners().forEachIndexed { i, corner ->
         if ((placement.toScreen(corner) - screenPoint).getDistanceSquared() <= reach) return FrameHit.Corner(i)
     }

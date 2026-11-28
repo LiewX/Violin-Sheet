@@ -13,7 +13,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Colour picker and size sliders | Done | #9: HSV picker and size sliders in a panel above the toolbar; the same picker on the Settings page. Token use to compare with #8 at the next cleanup |
 | 1. Annotation editing | Saved colour palettes and editable size presets | Done | #22: palettes with + Add colour and editing in the Sheet; Settings → Ink edits palettes (tap to edit or delete, hold and drag to reorder, Undo) and size presets; Sheets start on the first colour and middle preset (no stored defaults) |
 | 1. Annotation editing | Fixes from use (2026-11-27): toolbar keeps one width, palm rejection for navigation, strokes split at Page edges | Done | #23 toolbar, #24 palm rules, #25 strokes split at Page edges |
-| 1. Annotation editing | Symbols: fingerings | Not Started | — |
+| 1. Annotation editing | Symbols: fingerings | Done | #12: Edit mode (Symbol, Select, Eraser; Cover greyed until #18), mode switch and one-width bar across modes, fingerings 0–4 in Bravura, place/select/move/resize/erase with undo; Symbol table (DB v7). Next: #13 |
 | 1. Annotation editing | Symbols: articulations | Not Started | — |
 | 1. Annotation editing | Symbols: bowings | Not Started | — |
 | 1. Annotation editing | Symbols: dynamic letters | Not Started | — |
@@ -24,7 +24,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Text mode: Text boxes (italic/regular) and Links | Not Started | — |
 | 1. Annotation editing | Layers (Ink, Edit, Text) and visibility toggles | Not Started | — |
 | 1. Annotation editing | Settings page (feature-declared app-wide defaults) | In Progress | Page, registry and Reading Setting done (#5); Ink, Edit, Text and Links Settings arrive with their features |
-| 1. Annotation editing | Undo/redo | In Progress | Undo stack, Ink draw/highlight/erase undo done (#7, #8); lasso, Symbols, Covers and Text boxes add their commands with their features |
+| 1. Annotation editing | Undo/redo | In Progress | Undo stack, Ink draw/highlight/erase (#7, #8), lasso (#10, #11) and Symbol (#12) commands done; Covers and Text boxes add theirs with their features |
 | 1. Annotation editing | Autosave | Not Started | — |
 | 1. Annotation editing | Sharps/flats/naturals with spacing adjustment | Post-V1.0 | Needs music data |
 | 1. Annotation editing | Paste Ink across Sheets | Post-V1.0 | — |

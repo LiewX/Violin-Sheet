@@ -234,8 +234,19 @@ class SelectingTest {
     private val placement = PagePlacement(0, Size(200f, 300f), scale = 2f, offset = Offset(10f, 20f))
     private val wide = SelectionFrame(Offset(100f, 100f), Size(50f, 25f), angleDegrees = 0f)
 
-    private fun hit(frame: SelectionFrame, x: Float, y: Float, handleDistance: Float = 32f, minSide: Float = 0f) =
-        hitTest(frame, placement, Offset(x, y), handleRadiusPx = 12f, rotateHandleDistancePx = handleDistance, insideMarginPx = 8f, minSidePx = minSide)
+    private fun hit(frame: SelectionFrame, x: Float, y: Float, handleDistance: Float = 32f, minSide: Float = 0f, rotatable: Boolean = true) =
+        hitTest(frame, placement, Offset(x, y), handleRadiusPx = 12f, rotateHandleDistancePx = handleDistance, insideMarginPx = 8f, minSidePx = minSide, rotatable = rotatable)
+
+    @Test fun hitTestWithoutRotationHasNoRotateHandle() {
+        // The handle's spot (32 px above the top edge's middle) is outside the frame.
+        assertEquals(FrameHit.Outside, hit(wide, 210f, 140f, rotatable = false))
+        // With the handle on the top edge, a touch there is the inside.
+        assertEquals(FrameHit.Inside, hit(wide, 210f, 172f, handleDistance = 0f, rotatable = false))
+        // A tiny frame's overlapping handle no longer wins over the corner.
+        val tiny = SelectionFrame(Offset(100f, 100f), Size(2f, 2f), angleDegrees = 0f)
+        assertEquals(FrameHit.Corner(0), hit(tiny, 210f, 216f, handleDistance = 0f, rotatable = false))
+        assertEquals(FrameHit.Corner(2), hit(wide, 310f, 270f, rotatable = false))
+    }
 
     @Test fun hitTestPadsAThinFrameSoItsCornersStayApart() {
         // A straight line's frame, 1 pt high (2 px on screen), shown at least 48 px high: 12 pt each way.

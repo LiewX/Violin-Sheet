@@ -45,7 +45,7 @@ private val HighlighterIcon = icon(
 )
 
 // A block eraser, its rubber end hollow.
-private val EraserIcon = icon(
+internal val EraserIcon = icon(
     "Eraser",
     "M16.24,3.56L21.19,8.5C21.97,9.29 21.97,10.55 21.19,11.34L12,20.53C10.44,22.09 7.91,22.09 6.34,20.53L2.81,17" +
         "C2.03,16.22 2.03,14.95 2.81,14.17L13.41,3.56C14.2,2.78 15.46,2.78 16.24,3.56ZM4.22,15.58L7.76,19.11" +
@@ -58,6 +58,40 @@ private val LassoIcon = icon(
     "M3,9a9,6 0 1,0 18,0a9,6 0 1,0 -18,0zM5,9a7,4 0 1,0 14,0a7,4 0 1,0 -14,0z" +
         "M6.3,14.1L8.2,14.6L7.2,21L5.3,20.6Z",
 )
+
+// The mode switch (Decision 8): a fountain-pen nib for Ink, so it differs from the Pen tool's pencil.
+internal val InkModeIcon = icon(
+    "Ink mode",
+    "M12,2L18,10L15,19H9L6,10ZM10.5,11a1.5,1.5 0 1,0 3,0a1.5,1.5 0 1,0 -3,0ZM11.6,2.8h0.8v6.8h-0.8ZM8,20.5h8v2H8Z",
+)
+
+// Material "music note", for Edit mode.
+internal val EditModeIcon = icon(
+    "Edit mode",
+    "M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V7h4V3h-6z",
+)
+
+// A serif "T", for Text mode.
+internal val TextModeIcon = icon(
+    "Text mode",
+    "M4,3h16v5h-1.4c-0.3,-1.8 -1,-2.8 -3,-2.8H13.4v13c0,1 0.5,1.4 2,1.4V21H8.6v-1.4c1.5,0 2,-0.4 2,-1.4V5.2H8.4" +
+        "c-2,0 -2.7,1 -3,2.8H4Z",
+)
+
+// A pointer arrow, for Edit mode's Select tool.
+internal val SelectIcon = icon("Select", "M5,2L5,19L9.5,14.5L12.5,21.5L15,20.5L12,13.5L18.5,13.5Z")
+
+// A filled rectangle, for the Cover tool.
+internal val CoverIcon = icon("Cover", "M4,6h16v12H4Z")
+
+// Material "layers": two stacked sheets.
+internal val LayersIcon = icon(
+    "Layers",
+    "M11.99,18.54l-7.37,-5.73L3,14.07l9,7 9,-7 -1.63,-1.27 -7.38,5.74zM12,16l7.36,-5.73L21,9l-9,-7 -9,7 1.63,1.27L12,16z",
+)
+
+// Material "arrow drop down": the group switch's caret.
+internal val CaretIcon = icon("Caret", "M7,10l5,5 5,-5z")
 
 // Material "delete".
 internal val DeleteIcon = icon(

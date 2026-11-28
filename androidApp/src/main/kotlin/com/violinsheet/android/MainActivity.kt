@@ -19,18 +19,11 @@ import com.violinsheet.core.data.sheetPdf
 import com.violinsheet.core.pdf.openPdf
 import com.violinsheet.feature.settings.SettingsScreen
 import com.violinsheet.feature.annotation.AnnotationViewModel
-import com.violinsheet.feature.annotation.InkToolbar
-import com.violinsheet.feature.annotation.UndoControls
-import com.violinsheet.feature.annotation.LassoControls
+import com.violinsheet.feature.annotation.AnnotationBar
+import com.violinsheet.feature.annotation.AnnotationOverlay
 import com.violinsheet.feature.annotation.ToolPanelState
 import com.violinsheet.feature.annotation.closesToolPanel
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
-import com.violinsheet.core.ink.InkLayer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import com.violinsheet.feature.viewer.SheetListScreen
 import com.violinsheet.feature.viewer.SheetListViewModel
@@ -78,40 +71,12 @@ class MainActivity : ComponentActivity() {
                         val pdfFile = entry.arguments?.getString("pdfFile").orEmpty()
                         // The list only opens Sheets whose PDF exists (a missing one shows the re-import prompt).
                         val viewModel = viewModel { SheetViewModel(openPdf(sheetPdf(app, pdfFile)), app.settingsStore) }
-                        val annotations = viewModel { AnnotationViewModel(sheetId, app.inkRepository, app.settingsStore, app.eraserMemory) }
-                        val strokes by annotations.strokes.collectAsState()
-                        val tools by annotations.tools.collectAsState()
-                        val saveFailed by annotations.saveFailed.collectAsState()
-                        val canUndo by annotations.canUndo.collectAsState()
-                        val canRedo by annotations.canRedo.collectAsState()
-                        // Only whether there is a selection, so the toolbar doesn't recompose on every drag event.
-                        val hasSelection by remember(annotations) { annotations.selection.map { it != null }.distinctUntilChanged() }
-                            .collectAsState(initial = false)
-                        val canPaste by annotations.canPaste.collectAsState()
-                        val selectionColour = MaterialTheme.colorScheme.primary
+                        val annotations = viewModel { AnnotationViewModel(sheetId, app.inkRepository, app.symbolRepository, app.settingsStore, app.eraserMemory) }
                         val panel = remember { ToolPanelState() }
                         SheetScreen(
                             viewModel,
-                            overlay = { placements ->
-                                val selection by annotations.selection.collectAsState()
-                                val shownPages = remember(placements) { placements.associate { it.pageIndex to it.pageSize } }
-                                LaunchedEffect(shownPages) { annotations.onVisiblePages(shownPages) }
-                                InkLayer(
-                                    placements, strokes, tools.current, tools.eraser, annotations::addStrokes, annotations,
-                                    selection, annotations, selectionColour, annotations::onPenDown, Modifier.fillMaxSize(),
-                                )
-                            },
-                            toolbar = {
-                                InkToolbar(
-                                    tools,
-                                    annotations::setTools,
-                                    { annotations.setTools(it, save = false) },
-                                    UndoControls(canUndo, canRedo, annotations::undo, annotations::redo),
-                                    LassoControls(hasSelection, canPaste, annotations::deleteSelection, annotations::copySelection, annotations::paste),
-                                    panel,
-                                    saveFailed,
-                                )
-                            },
+                            overlay = { placements -> AnnotationOverlay(annotations, placements) },
+                            toolbar = { AnnotationBar(annotations, panel) },
                             modifier = Modifier.closesToolPanel(panel),
                         )
                     }

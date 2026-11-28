@@ -12,6 +12,7 @@ import com.violinsheet.core.data.SheetImporter
 import com.violinsheet.core.data.SheetRepository
 import com.violinsheet.core.data.appDatabase
 import com.violinsheet.core.data.ink.InkRepository
+import com.violinsheet.core.data.symbol.SymbolRepository
 import com.violinsheet.core.data.settings.SettingsRegistry
 import com.violinsheet.core.data.settings.SettingsStore
 import com.violinsheet.feature.annotation.EraserMemory
@@ -32,6 +33,7 @@ class ViolinSheetApp : Application() {
     val eraserMemory = EraserMemory()
     val settingsRegistry by lazy { SettingsRegistry(listOf(ViewerSettings.all, InkSettings.all)) }
     val inkRepository by lazy { InkRepository(database.inkDao(), appScope) }
+    val symbolRepository by lazy { SymbolRepository(database.symbolDao(), appScope) }
     val sheetImporter by lazy { SheetImporter(this, sheetRepository) }
 
     override fun onCreate() {

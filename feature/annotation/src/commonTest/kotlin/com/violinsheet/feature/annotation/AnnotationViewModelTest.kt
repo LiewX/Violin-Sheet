@@ -6,6 +6,8 @@ import com.violinsheet.core.data.ink.InkStrokeRow
 import com.violinsheet.core.data.settings.SettingDao
 import com.violinsheet.core.data.settings.SettingValue
 import com.violinsheet.core.data.settings.SettingsStore
+import com.violinsheet.core.data.symbol.SymbolRepository
+import com.violinsheet.feature.annotation.edit.FakeSymbolDao
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import com.violinsheet.core.ink.DragKind
@@ -129,7 +131,7 @@ class AnnotationViewModelTest {
     private fun TestScope.viewModel(store: ViewModelStore = ViewModelStore()): AnnotationViewModel {
         val repository = ink ?: InkRepository(dao, backgroundScope).also { ink = it }
         val factory = viewModelFactory {
-            initializer { AnnotationViewModel(sheetId, repository, SettingsStore(settingsDao, backgroundScope), EraserMemory()) { nextFallbackId++ } }
+            initializer { AnnotationViewModel(sheetId, repository, SymbolRepository(FakeSymbolDao(), backgroundScope), SettingsStore(settingsDao, backgroundScope), EraserMemory()) { nextFallbackId++ } }
         }
         return ViewModelProvider.create(store, factory)[AnnotationViewModel::class]
     }

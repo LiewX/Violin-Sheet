@@ -142,7 +142,7 @@ private fun SizeChoices(title: String, sizes: List<Float>, size: Float, panel: T
 }
 
 /** Fades the content out towards an edge that has more to scroll to. */
-private fun Modifier.fadedEdges(scroll: ScrollState): Modifier =
+internal fun Modifier.fadedEdges(scroll: ScrollState): Modifier =
     graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }.drawWithContent {
         drawContent()
         val fade = EDGE_FADE.toPx()

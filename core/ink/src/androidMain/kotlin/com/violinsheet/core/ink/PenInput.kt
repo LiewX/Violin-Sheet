@@ -30,15 +30,6 @@ private fun PointerEvent.eraseHeld(): Boolean {
 }
 
 /**
- * Compose turns a cancelled gesture into an ordinary lift. The MotionEvent behind it tells them apart: a cancel, a
- * pointer the system flagged as cancelled (palm rejection), or no event at all (Compose's own synthetic cancel).
- */
-private fun PointerEvent.isCancel(): Boolean {
-    val event = motionEvent ?: return true
-    return event.actionMasked == MotionEvent.ACTION_CANCEL || event.flags and MotionEvent.FLAG_CANCELED != 0
-}
-
-/**
  * The pen's input: draws, erases and lassos as [state]'s tool says. Pen input goes through Compose rather than a View
  * touch listener: Compose sees every pointer on its own, so the pen draws even inside a gesture a resting palm started
  * (navigation's palm guard deals with the palm itself). Finger touches pass through.
@@ -130,7 +121,7 @@ internal fun Modifier.penInput(state: InkLayerState, hostView: View): Modifier =
                         }
                         erasing != null && change.id == penPointer -> {
                             // Palm rejection or a system gesture took the pen: take the erasing back too.
-                            endErase(cancelled = event.isCancel())
+                            endErase(cancelled = event.isSystemCancel())
                             change.consume()
                         }
                         lasso.dragPage != null && change.id == penPointer && change.pressed -> {
@@ -139,7 +130,7 @@ internal fun Modifier.penInput(state: InkLayerState, hostView: View): Modifier =
                         }
                         lasso.dragPage != null && change.id == penPointer -> {
                             // Palm rejection or a system gesture took the pen: the selection stays where it was.
-                            lasso.endDrag(cancelled = event.isCancel())
+                            lasso.endDrag(cancelled = event.isSystemCancel())
                             change.consume()
                         }
                         lasso.lassoing && change.id == penPointer && change.pressed -> {
@@ -148,7 +139,7 @@ internal fun Modifier.penInput(state: InkLayerState, hostView: View): Modifier =
                             change.consume()
                         }
                         lasso.lassoing && change.id == penPointer -> {
-                            lasso.endLasso(cancelled = event.isCancel())
+                            lasso.endLasso(cancelled = event.isSystemCancel())
                             change.consume()
                         }
                         current != null && change.id == penPointer && change.pressed -> {
@@ -159,7 +150,7 @@ internal fun Modifier.penInput(state: InkLayerState, hostView: View): Modifier =
                             change.consume()
                         }
                         current != null && change.id == penPointer -> {
-                            if (event.isCancel()) {
+                            if (event.isSystemCancel()) {
                                 // Palm rejection or a system gesture took the pen: drop the stroke, no stray mark.
                                 strokesView.cancelStroke(current)
                                 state.wetStrokes.remove(current)

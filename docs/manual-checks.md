@@ -97,3 +97,19 @@ All checks for #2–#6, and the fixes after the first check (palm rest, zoomed t
 - [ ] Paste with nothing selected after switching tools (Pen, back to Lasso): Paste still works.
 - [ ] Pen-down on a Page with the Highlighter or Eraser, then Lasso and Paste: the paste goes to that Page.
 - [ ] Palm resting on another Page does not change where Paste lands.
+
+## #12 Edit mode + fingering Symbols
+
+- [ ] A fingering at the standard size (5 pt) looks right against the notes of a real Sheet; if not, say how much bigger or smaller.
+- [ ] Edit mode toolbar: the Fingering 0–4 buttons, the Symbol tool's "1" and the group pill look printed (Bravura) and are centred in their buttons.
+- [ ] Group panel: the accent, down-bow, "mf", slur arc and crescendo wedge read as their Symbols; the five unbuilt ones look greyed out.
+- [ ] Mode switch: the nib (Ink), note (Edit) and serif T (Text, greyed out) are clear, and don't clash with the Pen tool's pencil.
+- [ ] Switching between Ink and Edit mode, nothing in the bar jumps (mode switch, Undo, Redo, Layers stay put), landscape and portrait.
+- [ ] Portrait: the slot scrolls sideways with a faded edge, by finger and by pen.
+- [ ] Palm down first, then the pen in Edit mode: the palm neither places nor moves a Symbol, and the pen still works.
+- [ ] Pen dragging a Symbol, then a finger lands: the drag stays under the pen (the view may zoom).
+- [ ] Palm rejection mid-drag, mid-erase or mid-tap in Edit mode: the drag is dropped, the erased Symbols come back, nothing is placed.
+- [ ] Two pens or hands at once in Edit mode: only the first pen is followed.
+- [ ] Side button pressed mid-gesture in Edit mode: nothing changes.
+- [ ] Fingerings look printed (Bravura) at the standard size against real Sheets (Decision 6), and stay on their note when zoomed.
+- [ ] A selected fingering: dragging its middle moves it, dragging a corner handle resizes it.
