@@ -14,6 +14,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Saved colour palettes and editable size presets | Done | #22: palettes with + Add colour and editing in the Sheet; Settings → Ink edits palettes (tap to edit or delete, hold and drag to reorder, Undo) and size presets; Sheets start on the first colour and middle preset (no stored defaults) |
 | 1. Annotation editing | Fixes from use (2026-11-27): toolbar keeps one width, palm rejection for navigation, strokes split at Page edges | Done | #23 toolbar, #24 palm rules, #25 strokes split at Page edges |
 | 1. Annotation editing | Symbols: fingerings | Done | #12: Edit mode (Symbol, Select, Eraser; Cover greyed until #18), mode switch and one-width bar across modes, fingerings 0–4 in Bravura, place/select/move/resize/erase with undo; Symbol table (DB v7). Next: #13 |
+| 1. Annotation editing | Fixes from the manual check (2026-11-28) | Not Started | #27 Edit mode drag-to-place, tap clears, Lasso, side button erases; #28 palm window 0.15 s and panel closing; #29 size cursor on hover; #30 panel and Settings polish. #27 goes before #13 |
 | 1. Annotation editing | Symbols: articulations | Not Started | — |
 | 1. Annotation editing | Symbols: bowings | Not Started | — |
 | 1. Annotation editing | Symbols: dynamic letters | Not Started | — |
@@ -30,7 +31,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Paste Ink across Sheets | Post-V1.0 | — |
 | 1. Annotation editing | Export/import Settings | Post-V1.0 | — |
 | 1. Annotation editing | Handwriting to Symbols | Post-V1.0 | — |
-| 1. Annotation editing | Gesture Covers (scribble/cross, side button in Edit mode) | Post-V1.0 | Decide which gesture |
+| 1. Annotation editing | Gesture Covers (scribble/cross) | Post-V1.0 | Decide which gesture |
 | 1. Annotation editing | Free-form Cover shapes | Post-V1.0 | — |
 | 1. Annotation editing | Edit mode eraser removes Printed markings (auto-Cover) | Post-V1.0 | — |
 | 1. Annotation editing | Automatic bar counting | Post-V1.0 | — |

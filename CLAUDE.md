@@ -88,7 +88,7 @@ handoffs/                             Orchestrator ↔ implementer plan and repo
 
 - **Toolbar:** a slim palette that stays at the bottom edge, within thumb and pen reach. It keeps one width and position whatever the mode or tool (sized for Edit mode's, the widest): the mode switch, Undo/Redo and Layers stay put, and the tool-specific controls sit in a slot as wide as the widest tool's, scrolling sideways where the screen is too narrow (portrait), so no button moves under the pen. Layout: `docs/SPECS.md` → Modes. No modal dialogs for switching tools or picking colours.
 - **Input split:** the pen draws and edits; fingers only navigate (turn pages, zoom, open Links). Rely on the platform's palm rejection for pen input; finger navigation adds the palm rules in `docs/SPECS.md` (pen-near window, tap and flick timing, pinch threshold). Verify that finger touches during pen input do not create strokes.
-- **Symbol placement:** select Symbol → tap the Page → it is placed and selected, so the pen drags it into place straight away (no ghost or confirm step; undo removes it).
+- **Symbol placement:** select Symbol → pen down on the Page → it shows under the tip, follows the drag and is placed and selected at the lift (no confirm step; undo removes it).
 - **Page transitions:** pre-render at least the next Page so page turns are instant and silent. Automatic page flipping (Feature 3) needs zero blank-flash latency.
 - **Surround:** neutral dark grey (not pure black) around the Sheet to reduce eye strain. Never invert the Sheet itself.
 
