@@ -75,14 +75,14 @@ Printed-look Symbols, and Covers over Printed markings.
 2. **Articulations:** tenuto, staccato, accent, fermata
 3. **Bowings:** up-bow, down-bow, retake
 4. **Dynamic letters:** pp, p, mp, mf, f, ff, sfz, fp
-5. **Ties/slurs:** tap start, tap end; one handle sets arch height and flips above/below
-6. **Hairpins:** crescendo and decrescendo; tap start, tap end; one handle sets the opening
+5. **Ties/slurs:** tap start and tap end, or drag from start to end; one handle sets arch height and flips above/below
+6. **Hairpins:** crescendo and decrescendo; tap start and tap end, or drag from start to end; one handle sets the opening
 
 Text dynamics ("cresc.", "dim.", "subito") are written as Ink or a Text box.
 
-**Toolbar:** the Edit tools are Symbol, Select, Eraser and Cover. With the Symbol tool, the slot holds a group switch (a button showing the group's Symbol; tapping it lists the six groups in the panel), the chosen group's Symbols, the current colour swatch and a Symbol scale button (colour and the scale slider open in the panel). With Select, the slot holds Delete and the colour swatches for the selection; with Cover, Delete; the Eraser has no options.
+**Toolbar:** the Edit tools are Symbol, Select, Eraser and Cover. With the Symbol tool, the slot holds a group switch (a button showing the group's Symbol; tapping it lists the six groups in the panel, each as its Symbol's icon), the chosen group's Symbols (each button shows the Symbol as printed, never a text label), the current colour swatch and a Symbol scale button (colour and the scale slider open in the panel). With Select, the slot holds Delete and the colour swatches for the selection; with Cover, Delete; the Eraser has no options.
 
-**Placing:** pick a Symbol in the slot and tap the Page: the Symbol is placed at once and selected, so the pen can drag it into place straight away. Tapping an existing Symbol selects it instead of placing another; tapping empty Page while a Symbol is selected places another, so fingerings go down tap after tap. The Symbol tool's slot has no Delete: a wrong placement goes with Undo, the Eraser, or Select and Delete. Ties/slurs and hairpins are placed with two taps (start, end) and are then selected with their handle. A placement is one undo step.
+**Placing:** pick a Symbol in the slot and tap the Page: the Symbol is placed at once and selected, so the pen can drag it into place straight away. Tapping an existing Symbol selects it instead of placing another; tapping empty Page while a Symbol is selected places another, so fingerings go down tap after tap. The Symbol tool's slot has no Delete: a wrong placement goes with Undo, the Eraser, or Select and Delete. Ties/slurs and hairpins are placed with two taps (start, end) or one drag from start to end, and are then selected with their handle. A placement is one undo step.
 
 **Changing:** tap a Symbol or Cover to select it (the Select tool selects either; the Symbol tool selects Symbols, and the Cover tool Covers); drag to move (pen down on an unselected Symbol and drag selects and moves it in one go), handles to resize (kept on the Page, at least 2 pt), delete button in the toolbar. Undoing or redoing a change leaves its Symbol selected, as with the lasso. The S Pen side button does nothing in Edit mode.
 
