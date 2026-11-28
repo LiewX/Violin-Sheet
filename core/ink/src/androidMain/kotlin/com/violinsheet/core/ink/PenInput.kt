@@ -42,6 +42,11 @@ internal fun Modifier.penInput(state: InkLayerState, hostView: View): Modifier =
             state.eraserCircle = page?.let { position to erasing!!.size / 2 * it.scale }
             if (page != null) state.erase.eraseAt(page.pageIndex, page.toPage(position)) else state.erase.eraserOffPage()
         }
+        // Every point of a pen event, its batched history first; used on moves and on the lift.
+        fun eraseAlong(change: PointerInputChange) {
+            for (h in change.historical) eraseAt(h.position)
+            eraseAt(change.position)
+        }
         fun endErase(cancelled: Boolean) {
             erasing = null
             state.eraserCircle = null
@@ -105,13 +110,14 @@ internal fun Modifier.penInput(state: InkLayerState, hostView: View): Modifier =
                             change.consume()
                         }
                         erasing != null && change.id == penPointer && change.pressed -> {
-                            for (h in change.historical) eraseAt(h.position)
-                            eraseAt(change.position)
+                            eraseAlong(change)
                             change.consume()
                         }
                         erasing != null && change.id == penPointer -> {
-                            // Palm rejection or a system gesture took the pen: take the erasing back too.
-                            endErase(cancelled = event.isSystemCancel())
+                            // The lift ends the erase. If palm rejection or a system gesture took the pen, take the erasing back.
+                            val cancelled = event.isSystemCancel()
+                            if (!cancelled) eraseAlong(change) // the lift's own points are touched too
+                            endErase(cancelled = cancelled)
                             change.consume()
                         }
                         lasso.dragPage != null && change.id == penPointer && change.pressed -> {

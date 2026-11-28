@@ -136,3 +136,7 @@ Checks where a finger touches while the pen is down or hovering are left out: fi
 - [ ] Lasso: a loop around a few fingerings selects exactly those wholly inside (one half inside is not caught). The frame shows no corner handles, a drag inside moves them all, and Delete removes them in one Undo step.
 - [ ] Lasso: a pen tap on a fingering selects it alone (with handles), and a pen down on an unselected fingering drags it straight away. A pen tap on empty Page clears the selection.
 - [ ] The Lasso icon is the same in Ink mode and Edit mode, and the Edit toolbar doesn't shift when switching tools.
+
+## Ink eraser erases at the lift (fix after #27)
+
+- [ ] Ink mode, Eraser (and the side button): a quick swipe that ends right on a stroke erases it, in one Undo step.
