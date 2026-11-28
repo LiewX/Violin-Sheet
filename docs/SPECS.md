@@ -33,6 +33,8 @@ Mark up a Sheet with the pen. Printed-look edits should look like they were prin
 
 There are three modes: **Ink mode**, **Edit mode** and **Text mode**.
 
+**Toolbar across modes:** one slim bar at the bottom edge, the same in every mode: the **mode switch** (a segmented control with an icon for Ink, Edit and Text; one tap changes mode), Undo and Redo, the mode's tools and its slot, then a **Layers** button at the right end. The bar has the same width and position in all three modes, sized for Edit mode's (the widest), so the mode switch, Undo, Redo and Layers never move; Ink and Text leave empty space in their slot. Where the bar doesn't fit the screen (portrait), the slot scrolls sideways and the rest of the bar stays put.
+
 ### Ink mode
 
 Freehand Ink, kept as drawn (trimmed to its Page).
@@ -78,9 +80,11 @@ Printed-look Symbols, and Covers over Printed markings.
 
 Text dynamics ("cresc.", "dim.", "subito") are written as Ink or a Text box.
 
-**Placing:** pick a Symbol in the palette, tap to place, see a ghost preview, confirm.
+**Toolbar:** the Edit tools are Symbol, Select, Eraser and Cover. With the Symbol tool, the slot holds a group switch (a button showing the group's Symbol; tapping it lists the six groups in the panel), the chosen group's Symbols, the current colour swatch and a Symbol scale button (colour and the scale slider open in the panel). With Select, the slot holds Delete and the colour swatches for the selection; with Cover, Delete; the Eraser has no options.
 
-**Changing:** tap a Symbol or Cover to select it; drag to move, handles to resize, delete button in the toolbar. The S Pen side button does nothing in Edit mode.
+**Placing:** pick a Symbol in the slot and tap the Page: the Symbol is placed at once and selected, so the pen can drag it into place straight away. Tapping an existing Symbol selects it instead of placing another. Ties/slurs and hairpins are placed with two taps (start, end) and are then selected with their handle. A placement is one undo step.
+
+**Changing:** tap a Symbol or Cover to select it (the Select tool selects either; the Symbol tool selects Symbols, and the Cover tool Covers); drag to move, handles to resize, delete button in the toolbar. The S Pen side button does nothing in Edit mode.
 
 **Eraser:** an Edit mode eraser removes a whole Symbol when it touches any part of it. It never removes Covers (select and delete those), and it has no area mode.
 
@@ -96,15 +100,17 @@ Typed, printed-look text in Text boxes.
 
 - **Placing:** tap to place a Text box, then type with the on-screen keyboard (handwriting-to-text keyboards work too).
 - **Font:** a printed-look serif in **italic** (for "pizz.", "cresc.") or **regular** (for plain notes such as "breathe"). One font per Text box; no mixed styling inside a box.
+- **Toolbar:** Text mode has no tools; its slot holds the font switch (Italic | Regular, each in its own style), the colour swatches with + Add colour, the size slider, then Link and Delete (enabled only with a Text box selected). Font, colour and size change the selected Text box (one undo step each), or set the next Text box when none is selected. While the keyboard is up, the toolbar and its panel sit above it.
 - **Colour:** same presets and custom colour picker as Symbols.
 - **Size:** defaults from the Symbol scale, with a size slider.
 - **Changing:** tap a Text box to select it; drag to move, handles set the box width (text wraps inside; the size slider sets the font size, and the box grows in height to fit), delete button in the toolbar. Double-tap to edit the words. There is no eraser in Text mode, and the S Pen side button does nothing.
-- **Links:** a "Link" button on a selected Text box takes a web URL. The whole box becomes the Link and is drawn underlined. A **finger** tap on a Link shows an "Open \<site\>?" bar above the toolbar (not a dialog); confirming opens the browser. A finger tap on a Link follows the edge-tap palm rules (lifts within 0.25 s; ignored within 0.3 s of the pen). A **pen** tap only selects it. A finger tap on a Link always opens it, even inside the page-turn edge area.
+- **Links:** a "Link" button on a selected Text box opens a field in the panel for a web URL (http or https only: anything else shows an error under the field and Save stays disabled), with Cancel, Save and, when the box already has a Link, Remove link. The whole box becomes the Link and is drawn underlined. A **finger** tap on a Link shows an "Open \<site\>?" bar above the toolbar (not a dialog); confirming opens the browser. A finger tap on a Link follows the edge-tap palm rules (lifts within 0.25 s; ignored within 0.3 s of the pen). A **pen** tap only selects it. A finger tap on a Link always opens it, even inside the page-turn edge area.
 
 ### Layers, undo and saving
 
 - There are three layers, each with a show/hide toggle: **Ink**, **Edit** and **Text**. Covers sit under Symbols on the Edit layer, so hiding it brings back the Printed markings under the Covers. Hiding all three shows the Sheet exactly as printed.
 - Stacking, bottom to top: Page → Covers → Symbols → Text boxes → Ink. The highlighter blends (multiply) so the notes under it stay sharp.
+- The toggles are switches in the panel, opened by the **Layers** button at the right end of the toolbar (a dot on the button shows when a layer is hidden); the panel opens and closes like the others. Any layer can be hidden, the current mode's included; drawing or placing on a hidden layer shows it again.
 - Switching to a mode shows its layer if it was hidden. Layer toggles are remembered per Sheet.
 - Each Sheet has its own undo/redo history, covering Ink (including lasso actions), Symbols, Covers and Text boxes. It lasts while the Sheet is open and is cleared on close.
 - Saving is automatic. There is no Save button.
