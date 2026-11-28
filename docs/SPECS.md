@@ -33,7 +33,7 @@ Mark up a Sheet with the pen. Printed-look edits should look like they were prin
 
 There are three modes: **Ink mode**, **Edit mode** and **Text mode**.
 
-**Toolbar across modes:** one slim bar at the bottom edge, the same in every mode: the **mode switch** (a segmented control with an icon for Ink, Edit and Text; one tap changes mode), Undo and Redo, the mode's tools and its slot, then a **Layers** button at the right end. The bar has the same width and position in all three modes, sized for Edit mode's (the widest), so the mode switch, Undo, Redo and Layers never move; Ink and Text leave empty space in their slot. Where the bar doesn't fit the screen (portrait), the slot scrolls sideways and the rest of the bar stays put.
+**Toolbar across modes:** one slim bar at the bottom edge, the same in every mode: the **mode switch** (a segmented control with an icon each: a pen for Ink, a music note for Edit, a serif T for Text; one tap changes mode; a Sheet always opens in Ink mode), Undo and Redo, the mode's tools and its slot, then a **Layers** button at the right end. The bar has the same width and position in all three modes, sized for Edit mode's (the widest), so the mode switch, Undo, Redo and Layers never move; Ink and Text leave empty space in their slot. Where the bar doesn't fit the screen (portrait), the slot scrolls sideways and the rest of the bar stays put.
 
 ### Ink mode
 
@@ -82,15 +82,15 @@ Text dynamics ("cresc.", "dim.", "subito") are written as Ink or a Text box.
 
 **Toolbar:** the Edit tools are Symbol, Select, Eraser and Cover. With the Symbol tool, the slot holds a group switch (a button showing the group's Symbol; tapping it lists the six groups in the panel), the chosen group's Symbols, the current colour swatch and a Symbol scale button (colour and the scale slider open in the panel). With Select, the slot holds Delete and the colour swatches for the selection; with Cover, Delete; the Eraser has no options.
 
-**Placing:** pick a Symbol in the slot and tap the Page: the Symbol is placed at once and selected, so the pen can drag it into place straight away. Tapping an existing Symbol selects it instead of placing another. Ties/slurs and hairpins are placed with two taps (start, end) and are then selected with their handle. A placement is one undo step.
+**Placing:** pick a Symbol in the slot and tap the Page: the Symbol is placed at once and selected, so the pen can drag it into place straight away. Tapping an existing Symbol selects it instead of placing another; tapping empty Page while a Symbol is selected places another, so fingerings go down tap after tap. The Symbol tool's slot has no Delete: a wrong placement goes with Undo, the Eraser, or Select and Delete. Ties/slurs and hairpins are placed with two taps (start, end) and are then selected with their handle. A placement is one undo step.
 
-**Changing:** tap a Symbol or Cover to select it (the Select tool selects either; the Symbol tool selects Symbols, and the Cover tool Covers); drag to move, handles to resize, delete button in the toolbar. The S Pen side button does nothing in Edit mode.
+**Changing:** tap a Symbol or Cover to select it (the Select tool selects either; the Symbol tool selects Symbols, and the Cover tool Covers); drag to move (pen down on an unselected Symbol and drag selects and moves it in one go), handles to resize (kept on the Page, at least 2 pt), delete button in the toolbar. Undoing or redoing a change leaves its Symbol selected, as with the lasso. The S Pen side button does nothing in Edit mode.
 
 **Eraser:** an Edit mode eraser removes a whole Symbol when it touches any part of it. It never removes Covers (select and delete those), and it has no area mode.
 
 **Colour:** every Symbol starts in the Symbol palette's first colour, as Ink does (no separate default to set). The palette starts black and blue (app-wide, saved and edited like the Ink palettes), with the custom colour picker.
 
-**Size:** the Symbol scale is detected per Page from the staff-line spacing. A per-Sheet slider adjusts it, and a single Symbol can be resized. Pages with no detectable staff (title pages, bad scans) use a standard size.
+**Size:** the Symbol scale is detected per Page from the staff-line spacing. A per-Sheet slider adjusts it, and a single Symbol can be resized. A Symbol's size is kept relative to its Page's Symbol scale, so a change of the scale resizes Symbols already placed. Pages with no detectable staff (title pages, bad scans) use a standard size.
 
 **Covers:** drag a rectangle over a Printed marking, then adjust with handles. The fill colour is sampled from the paper just outside the rectangle. To change a printed tie or bowing, cover it and place a new Symbol.
 
