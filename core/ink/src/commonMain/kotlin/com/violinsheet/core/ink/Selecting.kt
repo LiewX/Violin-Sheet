@@ -22,22 +22,35 @@ fun lassoSelects(strokes: List<InkStroke>, pageIndex: Int, lasso: List<Offset>, 
     if (lasso.size < 3) return emptyList()
     val lassoBox = boundsOf(lasso)
     return strokes.filter {
-        it.pageIndex == pageIndex && it.pointBounds().meets(lassoBox) && it.caughtBy(lasso, includePartlyEnclosed)
+        it.pageIndex == pageIndex && it.pointBounds().meets(lassoBox) &&
+            caughtBy(it.points.size, { i -> Offset(it.points[i].x, it.points[i].y) }, lasso, includePartlyEnclosed)
     }.map { it.id }
 }
 
-private fun InkStroke.caughtBy(lasso: List<Offset>, includePartlyEnclosed: Boolean): Boolean {
+/**
+ * Whether [rect] (Page points) is wholly inside [lasso]: its outline is measured as a stroke's path is by
+ * [lassoSelects], so concave loops and both lobes of a figure eight behave as for Ink. A Symbol's glyph box, and a
+ * Cover's rect (#18). Fewer than 3 lasso points hold nothing.
+ */
+fun rectInsideLasso(rect: Rect, lasso: List<Offset>): Boolean {
+    if (lasso.size < 3 || !rect.meets(boundsOf(lasso))) return false
+    val outline = listOf(rect.topLeft, rect.topRight, rect.bottomRight, rect.bottomLeft, rect.topLeft)
+    return caughtBy(outline.size, outline::get, lasso, includePartlyEnclosed = false)
+}
+
+/** Whether the path of [count] points ([pointAt]) is caught by [lasso], as [lassoSelects] says. */
+private inline fun caughtBy(count: Int, pointAt: (Int) -> Offset, lasso: List<Offset>, includePartlyEnclosed: Boolean): Boolean {
     var total = 0f
     var inside = 0f
-    for (i in 1 until points.size) {
-        val a = points[i - 1]
-        val b = points[i]
-        val length = segmentLength(a, b)
+    for (i in 1 until count) {
+        val a = pointAt(i - 1)
+        val b = pointAt(i)
+        val length = (b - a).getDistance()
         if (length == 0f) continue
-        val count = ceil(length / LASSO_PIECE).toInt()
-        val piece = length / count
-        for (k in 0 until count) {
-            val t = (k + 0.5f) / count
+        val pieces = ceil(length / LASSO_PIECE).toInt()
+        val piece = length / pieces
+        for (k in 0 until pieces) {
+            val t = (k + 0.5f) / pieces
             if (windingNumber(Offset(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t), lasso) != 0) {
                 inside += piece
             } else if (!includePartlyEnclosed) {
@@ -47,7 +60,7 @@ private fun InkStroke.caughtBy(lasso: List<Offset>, includePartlyEnclosed: Boole
         total += length
     }
     // A dot (or a stroke that never moved) is inside if its point is.
-    if (total == 0f) return windingNumber(Offset(points[0].x, points[0].y), lasso) != 0
+    if (total == 0f) return windingNumber(pointAt(0), lasso) != 0
     return !includePartlyEnclosed || inside > total / 2
 }
 

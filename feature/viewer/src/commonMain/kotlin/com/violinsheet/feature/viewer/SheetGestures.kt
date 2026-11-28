@@ -36,6 +36,12 @@ internal interface SheetGestureHandler {
     fun pan(delta: Offset): Offset
 
     fun turn(direction: Int)
+
+    /**
+     * One finger tapped (quick, within the touch slop, not a palm), [atEdge] in a Page-turn edge or not. Comes just
+     * before the edge tap's [turn].
+     */
+    fun tapped(atEdge: Boolean)
 }
 
 /** Two or more fingers now: their [centroid] and [spread], and the [pan] and [zoom] factor since the last event. */
@@ -109,6 +115,11 @@ internal fun Modifier.sheetGestures(handler: SheetGestureHandler): Modifier {
                     // A pinch never turns the page, even when it ends with one finger; nor does a cancelled touch.
                     if (multiTouch || isCancel(event.changes)) return@awaitEachGesture
                     val liftMillis = event.changes.maxOf { it.uptimeMillis }
+                    val tap = fingerTapOf(
+                        down.position, drag, size.width.toFloat(), viewConfiguration.touchSlop, liftMillis - down.uptimeMillis,
+                    )
+                    // Reported before the turn, so a selection is cleared before its Page leaves the screen.
+                    if (tap != null) current.tapped(atEdge = tap is FingerTap.Edge)
                     val turn = pageTurnFor(
                         down.position, drag, overscroll, zoomedAtStart, size.width.toFloat(), swipeDistance,
                         viewConfiguration.touchSlop, leftEdgeAtStart, rightEdgeAtStart, liftMillis - down.uptimeMillis,

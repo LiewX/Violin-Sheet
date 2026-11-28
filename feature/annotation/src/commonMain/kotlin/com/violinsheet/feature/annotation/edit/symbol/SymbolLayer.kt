@@ -1,4 +1,4 @@
-package com.violinsheet.feature.annotation.edit
+package com.violinsheet.feature.annotation.edit.symbol
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
@@ -25,11 +25,18 @@ private const val SPACES_PER_EM = 4f
 
 /**
  * The [symbols] on the Pages at [placements], in their printed look (Bravura), each glyph box centred on the Symbol's
- * point, in its colour. The [selection]'s Symbol is drawn where its drag preview puts it. Symbols of a kind this
- * version doesn't know are never held (SymbolEditing.loaded), and are skipped here too.
+ * point, in its colour. The [selection]'s Symbols are drawn where its drag preview puts them, and the Symbol being placed
+ * ([placing]) on top of all. Symbols of a kind this version doesn't know are never held (SymbolEditing.loaded), and are
+ * skipped here too.
  */
 @Composable
-internal fun SymbolLayer(placements: List<PagePlacement>, symbols: List<Symbol>, selection: SymbolSelection?, modifier: Modifier = Modifier) {
+internal fun SymbolLayer(
+    placements: List<PagePlacement>,
+    symbols: List<Symbol>,
+    selection: SymbolSelection?,
+    placing: Symbol?,
+    modifier: Modifier = Modifier,
+) {
     val font = rememberSymbolFont()
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
@@ -37,13 +44,13 @@ internal fun SymbolLayer(placements: List<PagePlacement>, symbols: List<Symbol>,
     val layouts = remember(font, measurer, density) { HashMap<SymbolKind, TextLayoutResult>() }
     val style = remember(font, density) { TextStyle(fontFamily = font, fontSize = with(density) { REFERENCE_EM.toSp() }) }
     Canvas(modifier) {
-        for (symbol in symbols) {
+        for (symbol in if (placing == null) symbols else symbols + placing) {
             val kind = SymbolKind.fromStored(symbol.kind) ?: continue
             val page = placements.firstOrNull { it.pageIndex == symbol.pageIndex } ?: continue
             val layout = layouts.getOrPut(kind) {
                 measurer.measure(kind.codepoint.toChar().toString(), style, overflow = TextOverflow.Visible)
             }
-            val preview = selection?.takeIf { it.id == symbol.id }?.preview
+            val preview = selection?.takeIf { symbol.id in it.ids }?.preview
             val centre = Offset(symbol.x, symbol.y).let { preview?.apply(it) ?: it }
             val scale = symbol.scale * (preview?.scale ?: 1f)
             // Screen px per layout px.

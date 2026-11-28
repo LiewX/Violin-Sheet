@@ -35,13 +35,18 @@ import com.violinsheet.feature.annotation.CaretIcon
 import com.violinsheet.feature.annotation.DISABLED_ALPHA
 import com.violinsheet.feature.annotation.DeleteIcon
 import com.violinsheet.feature.annotation.EraserIcon
+import com.violinsheet.feature.annotation.LassoIcon
 import com.violinsheet.feature.annotation.Panel
 import com.violinsheet.feature.annotation.SWATCH_GAP
-import com.violinsheet.feature.annotation.SelectIcon
 import com.violinsheet.feature.annotation.SlotFrame
 import com.violinsheet.feature.annotation.ToolPanelState
 import com.violinsheet.feature.annotation.ToolSlot
 import com.violinsheet.feature.annotation.ToolbarDivider
+import com.violinsheet.feature.annotation.edit.symbol.SymbolGlyph
+import com.violinsheet.feature.annotation.edit.symbol.SymbolGroup
+import com.violinsheet.feature.annotation.edit.symbol.SymbolGroupIcon
+import com.violinsheet.feature.annotation.edit.symbol.SymbolKind
+import com.violinsheet.feature.annotation.edit.symbol.rememberSymbolFont
 
 /** Room for Dynamics' eight Symbol buttons (the largest group), so the slot doesn't change with the group. */
 private const val MOST_SYMBOLS = 8
@@ -49,10 +54,10 @@ private val SYMBOLS_WIDTH = CHOICE_SIZE * MOST_SYMBOLS + SWATCH_GAP * (MOST_SYMB
 private val GROUP_SWITCH_WIDTH = 50.dp
 
 /**
- * Edit mode's region of the bar: the tool switch (Symbol, Select, Eraser, Cover; Cover greyed out until #18), then the
+ * Edit mode's region of the bar: the tool switch (Symbol, Lasso, Eraser, Cover; Cover greyed out until #18), then the
  * chosen tool's slot. The Symbol slot holds the group switch, the group's Symbols as printed icons, and the colour
- * swatch and scale button (greyed out until #14/#15); no Delete (Decision 2). The Select slot holds Delete, enabled
- * with a [hasSelection]; the Eraser slot a hint.
+ * swatch and scale button (greyed out until #14/#15); no Delete (Decision 2). The Lasso slot holds Delete, enabled
+ * with a [hasSelection] (#14 adds the swatches); the Eraser slot a hint.
  */
 @Composable
 internal fun RowScope.EditRegion(
@@ -69,7 +74,7 @@ internal fun RowScope.EditRegion(
         Choice(tools.chosen == tool, tool.name, { onTools(tools.copy(chosen = tool)) }, enabled = tool != EditTool.Cover) {
             when (tool) {
                 EditTool.Symbol -> SymbolGlyph(SymbolKind.Fingering1.codepoint, SymbolKind.Fingering1.box, font)
-                EditTool.Select -> Icon(SelectIcon, contentDescription = null)
+                EditTool.Lasso -> Icon(LassoIcon, contentDescription = null)
                 EditTool.Eraser -> Icon(EraserIcon, contentDescription = null)
                 EditTool.Cover -> Icon(CoverIcon, contentDescription = null)
             }
@@ -80,8 +85,8 @@ internal fun RowScope.EditRegion(
         ToolSlot(EditTool.entries, tools.chosen) { tool ->
             when (tool) {
                 EditTool.Symbol -> SymbolSlot(tools, onTools, panel, font)
-                EditTool.Select -> IconButton(onClick = onDelete, enabled = hasSelection, modifier = Modifier.size(CHOICE_SIZE)) {
-                    Icon(DeleteIcon, contentDescription = "Delete Symbol")
+                EditTool.Lasso -> IconButton(onClick = onDelete, enabled = hasSelection, modifier = Modifier.size(CHOICE_SIZE)) {
+                    Icon(DeleteIcon, contentDescription = "Delete selection")
                 }
                 EditTool.Eraser -> Text("Touch a Symbol to remove it", style = MaterialTheme.typography.bodyMedium)
                 EditTool.Cover -> Unit

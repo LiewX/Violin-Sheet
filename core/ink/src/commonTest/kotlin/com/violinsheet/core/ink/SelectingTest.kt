@@ -8,6 +8,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class SelectingTest {
     /** A stroke through [xs] at height [y], 1 pt thick, on Page [page]. */
@@ -280,6 +282,38 @@ class SelectingTest {
         // A frame so small its handle and corners overlap: the handle wins.
         val tiny = SelectionFrame(Offset(100f, 100f), Size(2f, 2f), angleDegrees = 0f)
         assertEquals(FrameHit.RotateHandle, hit(tiny, 210f, 216f, handleDistance = 0f))
+    }
+
+    @Test fun aRectWhollyInsideTheLassoIsInsideAndOneWithACornerOutIsNot() {
+        val loop = rect(0f, 0f, 100f, 100f)
+        assertTrue(rectInsideLasso(Rect(10f, 10f, 30f, 40f), loop))
+        assertFalse(rectInsideLasso(Rect(90f, 10f, 105f, 40f), loop), "one corner pokes out")
+        assertFalse(rectInsideLasso(Rect(200f, 200f, 210f, 210f), loop), "far away")
+    }
+
+    @Test fun aConcaveLassoWhoseNotchCutsTheRectLeavesItOut() {
+        // A U: the notch comes down from the top, x 40..60, to y = 70.
+        val u = listOf(
+            Offset(0f, 0f), Offset(40f, 0f), Offset(40f, 70f), Offset(60f, 70f), Offset(60f, 0f),
+            Offset(100f, 0f), Offset(100f, 100f), Offset(0f, 100f),
+        )
+        // All four corners are inside the U, but the top edge crosses the notch.
+        assertFalse(rectInsideLasso(Rect(20f, 50f, 80f, 90f), u))
+        // Below the notch: inside.
+        assertTrue(rectInsideLasso(Rect(20f, 75f, 80f, 90f), u))
+    }
+
+    @Test fun aFigureEightLassoHoldsARectInOneLobe() {
+        // Two squares joined at a crossing, (0,0)-(50,50) and (50,50)-(100,100), drawn as one loop.
+        val eight = listOf(Offset(0f, 0f), Offset(50f, 0f), Offset(50f, 100f), Offset(100f, 100f), Offset(100f, 50f), Offset(0f, 50f))
+        assertTrue(rectInsideLasso(Rect(10f, 10f, 40f, 40f), eight))
+        assertTrue(rectInsideLasso(Rect(60f, 60f, 90f, 90f), eight))
+        assertFalse(rectInsideLasso(Rect(10f, 10f, 90f, 90f), eight), "across both lobes and the gaps")
+    }
+
+    @Test fun aLassoOfFewerThanThreePointsHoldsNothing() {
+        assertFalse(rectInsideLasso(Rect(10f, 10f, 20f, 20f), emptyList()))
+        assertFalse(rectInsideLasso(Rect(10f, 10f, 20f, 20f), listOf(Offset(0f, 0f), Offset(100f, 100f))))
     }
 
     @Test fun hitTestFollowsTheFrameAngle() {

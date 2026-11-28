@@ -1,4 +1,4 @@
-package com.violinsheet.feature.annotation.edit
+package com.violinsheet.feature.annotation.edit.symbol
 
 import com.violinsheet.core.data.symbol.SymbolDao
 import com.violinsheet.core.data.symbol.SymbolRow

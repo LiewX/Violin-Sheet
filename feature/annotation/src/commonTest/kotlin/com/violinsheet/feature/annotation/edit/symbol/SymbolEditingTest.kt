@@ -1,4 +1,4 @@
-package com.violinsheet.feature.annotation.edit
+package com.violinsheet.feature.annotation.edit.symbol
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -22,6 +22,8 @@ import com.violinsheet.core.ink.StrokeTool
 import com.violinsheet.feature.annotation.AnnotationViewModel
 import com.violinsheet.feature.annotation.EraserMemory
 import com.violinsheet.feature.annotation.ToolChoice
+import com.violinsheet.feature.annotation.edit.EditTool
+import com.violinsheet.feature.annotation.edit.Mode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -118,7 +120,7 @@ class SymbolEditingTest {
 
     private fun AnnotationViewModel.only(): Symbol = symbols.value.single()
 
-    private fun AnnotationViewModel.selectedId() = symbolSelection.value?.id
+    private fun AnnotationViewModel.selectedId() = symbolSelection.value?.ids?.single()
 
     private fun AnnotationViewModel.tool(tool: EditTool) = setEditTools(editTools.value.copy(chosen = tool))
 
@@ -283,23 +285,23 @@ class SymbolEditingTest {
         near(2f, 2 * halfWidth * vm.only().scale)
     }
 
-    @Test fun withTheSelectToolATapOnEmptyPageClearsTheSelection() = runTest {
+    @Test fun withTheLassoToolATapOnEmptyPageClearsTheSelection() = runTest {
         val vm = editing()
         vm.tap(Offset(50f, 60f))
-        vm.tool(EditTool.Select)
+        vm.tool(EditTool.Lasso)
         vm.edit.penDown(0, Offset(50f, 60f), pageSize, reach, FrameHit.Outside)
         vm.edit.penUp(Offset(50f, 60f), moved = false, cancelled = false)
         assertEquals(vm.only().id, vm.selectedId())
         vm.tap(Offset(150f, 200f))
         assertNull(vm.selectedId())
-        assertEquals(1, vm.symbols.value.size, "the Select tool places nothing")
+        assertEquals(1, vm.symbols.value.size, "the Lasso tool places nothing")
     }
 
     @Test fun deleteRemovesTheSelectedSymbolAndUndoBringsItBackSelected() = runTest {
         val vm = editing()
         vm.tap(Offset(50f, 60f))
         val s = vm.only()
-        vm.tool(EditTool.Select)
+        vm.tool(EditTool.Lasso)
         vm.tap(Offset(50f, 60f))
         vm.deleteSelection()
         settle()
@@ -383,13 +385,6 @@ class SymbolEditingTest {
         assertTrue(vm.symbols.value.isEmpty())
     }
 
-    @Test fun aDragFromEmptyPageWithAGlyphKindPlacesNothing() = runTest {
-        val vm = editing()
-        vm.drag(Offset(50f, 60f), Offset(90f, 90f))
-        assertTrue(vm.symbols.value.isEmpty())
-        assertFalse(vm.canUndo.value)
-    }
-
     @Test fun undoAndRedoOfPlaceAndMoveReselectPerTheTable() = runTest {
         val vm = editing()
         vm.tap(Offset(50f, 60f))
@@ -407,14 +402,14 @@ class SymbolEditingTest {
         assertEquals(70f, vm.only().x)
     }
 
-    @Test fun undoingAOneSymbolEraseReselectsItWithTheSelectTool() = runTest {
+    @Test fun undoingAOneSymbolEraseReselectsItWithTheLassoTool() = runTest {
         val vm = editing()
         vm.tap(Offset(20f, 20f))
         vm.tool(EditTool.Eraser)
         vm.edit.beginErase()
         vm.edit.eraseAt(0, Offset(20f, 20f), reach)
         vm.edit.endErase(cancelled = false)
-        vm.tool(EditTool.Select)
+        vm.tool(EditTool.Lasso)
         vm.undo()
         assertEquals(vm.only().id, vm.selectedId())
     }
@@ -528,7 +523,7 @@ class SymbolEditingTest {
     @Test fun changingTheEditToolClearsTheSymbolSelection() = runTest {
         val vm = editing()
         vm.tap(Offset(50f, 60f))
-        vm.tool(EditTool.Select)
+        vm.tool(EditTool.Lasso)
         assertNull(vm.selectedId())
     }
 

@@ -7,7 +7,7 @@ import com.violinsheet.core.data.settings.SettingDao
 import com.violinsheet.core.data.settings.SettingValue
 import com.violinsheet.core.data.settings.SettingsStore
 import com.violinsheet.core.data.symbol.SymbolRepository
-import com.violinsheet.feature.annotation.edit.FakeSymbolDao
+import com.violinsheet.feature.annotation.edit.symbol.FakeSymbolDao
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import com.violinsheet.core.ink.DragKind

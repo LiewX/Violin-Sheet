@@ -52,8 +52,8 @@ internal val EraserIcon = icon(
         "C8.54,19.9 9.8,19.9 10.59,19.11L14.12,15.58L9.17,10.63L4.22,15.58Z",
 )
 
-// A lasso loop with its tail.
-private val LassoIcon = icon(
+// A lasso loop with its tail: Ink mode's Lasso tool and Edit mode's.
+internal val LassoIcon = icon(
     "Lasso",
     "M3,9a9,6 0 1,0 18,0a9,6 0 1,0 -18,0zM5,9a7,4 0 1,0 14,0a7,4 0 1,0 -14,0z" +
         "M6.3,14.1L8.2,14.6L7.2,21L5.3,20.6Z",
@@ -77,9 +77,6 @@ internal val TextModeIcon = icon(
     "M4,3h16v5h-1.4c-0.3,-1.8 -1,-2.8 -3,-2.8H13.4v13c0,1 0.5,1.4 2,1.4V21H8.6v-1.4c1.5,0 2,-0.4 2,-1.4V5.2H8.4" +
         "c-2,0 -2.7,1 -3,2.8H4Z",
 )
-
-// A pointer arrow, for Edit mode's Select tool.
-internal val SelectIcon = icon("Select", "M5,2L5,19L9.5,14.5L12.5,21.5L15,20.5L12,13.5L18.5,13.5Z")
 
 // A filled rectangle, for the Cover tool.
 internal val CoverIcon = icon("Cover", "M4,6h16v12H4Z")

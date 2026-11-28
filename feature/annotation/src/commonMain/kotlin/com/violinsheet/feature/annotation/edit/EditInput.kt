@@ -10,15 +10,19 @@ import com.violinsheet.core.ink.FrameHit
  */
 interface EditInput {
     /**
-     * The pen went down at [point] on Page [pageIndex] (size [pageSize]) with the Symbol, Select or Cover tool.
-     * [frameHit] is what the pen hit on the selected Symbol's frame: the pen layer runs `hitTest` (no rotate handle)
-     * when the selection is on this Page, and passes [FrameHit.Outside] otherwise. A corner starts a resize, the
-     * inside a move; otherwise the topmost Symbol within [reach] of [point] is selected and starts a move, and empty
-     * Page starts a pending placement (Symbol tool) or clears the selection (Select tool). [frameMinSide] is the
+     * The pen went down at [point] on Page [pageIndex] (size [pageSize]) with the Symbol, Lasso or Cover tool.
+     * [frameHit] is what the pen hit on the selection's frame: the pen layer runs `hitTest` (no rotate handle)
+     * when the selection is on this Page, and passes [FrameHit.Outside] otherwise. A corner starts a resize (one
+     * Symbol; several only move), the inside a move of all selected (a still lift there changes nothing); otherwise
+     * the topmost Symbol within [reach] of [point] is selected alone and starts a move, and empty
+     * Page clears the selection and, with the Symbol tool, starts a placement: the Symbol shows under the pen at once,
+     * follows [dragTo] and is placed at [penUp] where it was last shown. With the Lasso tool, empty Page starts a loop
+     * instead: the result is true, and the pen layer then collects the loop and sends [loopDone] at the lift (a
+     * still lift sends nothing), not [dragTo] or [penUp]. [frameMinSide] is the
      * shortest side the frame is shown with (FRAME_MIN_SIDE in Page points): a resize follows the pen on the frame as
      * shown, not on the glyph's own (maybe tiny) box.
      */
-    fun penDown(pageIndex: Int, point: Offset, pageSize: Size, reach: Float, frameHit: FrameHit, frameMinSide: Float = 0f)
+    fun penDown(pageIndex: Int, point: Offset, pageSize: Size, reach: Float, frameHit: FrameHit, frameMinSide: Float = 0f): Boolean
 
     /** The pen moved to [point] since [penDown]. */
     fun dragTo(point: Offset)
@@ -29,7 +33,7 @@ interface EditInput {
      */
     fun penUp(upPoint: Offset, moved: Boolean, cancelled: Boolean)
 
-    /** The Eraser tool's pen went down. */
+    /** The pen went down to erase: the Eraser tool, or any tool with the side button held. Ends any selection or placement. */
     fun beginErase()
 
     /** The Eraser is at [point] on Page [pageIndex]: every Symbol there whose box, widened by [reach], holds it goes. */
@@ -41,7 +45,13 @@ interface EditInput {
     /** The Eraser lifted: one undo step for what it took; [cancelled] puts it all back without saving. */
     fun endErase(cancelled: Boolean)
 
-    /** Deletes the selected Symbol, as an undo step. */
+    /**
+     * A lasso loop on Page [pageIndex] closed at the lift, [loop] in its Page points: the Symbols there whose glyph box
+     * is wholly inside are selected (none clears the selection). The Lasso tool's loop sends it (EditLoopGesture).
+     */
+    fun loopDone(pageIndex: Int, loop: List<Offset>)
+
+    /** Deletes the selected Symbols, as one undo step. */
     fun deleteSelection()
 
     fun clearSelection()

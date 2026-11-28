@@ -35,7 +35,7 @@ fun DrawScope.drawSelectionFrame(selected: Selection, page: PagePlacement, colou
 
 /**
  * [frame] with [preview] applied, on [page], padded as hitTest pads it. With [rotatable] false (a Symbol) there is no
- * rotate handle.
+ * rotate handle; with [handles] false (several Symbols, which only move) no corner handles either.
  */
 fun DrawScope.drawSelectionFrame(
     frame: SelectionFrame,
@@ -44,19 +44,20 @@ fun DrawScope.drawSelectionFrame(
     colour: Color,
     path: Path,
     rotatable: Boolean = true,
+    handles: Boolean = true,
 ) {
     val shown = (preview?.let(frame::transformed) ?: frame).shownAt(page, FRAME_MIN_SIDE.toPx())
-    drawFrame(shown, page, colour, path, rotatable)
+    drawFrame(shown, page, colour, path, rotatable && handles, handles)
 }
 
-private fun DrawScope.drawFrame(frame: SelectionFrame, page: PagePlacement, colour: Color, path: Path, rotatable: Boolean) {
+private fun DrawScope.drawFrame(frame: SelectionFrame, page: PagePlacement, colour: Color, path: Path, rotatable: Boolean, handles: Boolean) {
     val corners = frame.corners().map(page::toScreen)
     path.reset()
     path.moveTo(corners[0].x, corners[0].y)
     for (i in 1..3) path.lineTo(corners[i].x, corners[i].y)
     path.close()
     drawPath(path, colour, style = Outline(width = 1.dp.toPx()))
-    for (c in corners) drawCircle(colour, HANDLE_DRAWN_RADIUS.toPx(), c)
+    if (handles) for (c in corners) drawCircle(colour, HANDLE_DRAWN_RADIUS.toPx(), c)
     if (!rotatable) return
     val handle = rotateHandle(frame, page, ROTATE_HANDLE_DISTANCE.toPx())
     val topMiddle = Offset((corners[0].x + corners[1].x) / 2, (corners[0].y + corners[1].y) / 2)

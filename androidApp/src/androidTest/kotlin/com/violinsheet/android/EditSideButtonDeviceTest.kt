@@ -14,14 +14,16 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The S Pen side button does nothing in Edit mode. adb can't hold the button, so this injects stylus events carrying
- * BUTTON_STYLUS_PRIMARY. It only drives the pen: check the result in the database (the Ink under the swipe is
- * unchanged; the tap placed exactly one Symbol).
- * - Select tool: a button-held swipe from (`swipeX`, `swipeFromY`) to (`swipeX`, `swipeToY`), across Ink.
- * - Symbol tool: a button-held tap at (`tapX`, `tapY`) on empty Page.
+ * The S Pen side button erases Symbols in Edit mode with any tool, decided at pen down (#27 part 3). adb can't hold
+ * the button, so this injects stylus events carrying BUTTON_STYLUS_PRIMARY. It only drives the pen: the calling script
+ * checks the database (Symbol rows, and the Ink under the swipe unchanged).
+ * - `gesture=swipe`: with the `tool` ("Symbol" or "Lasso"), an optional plain pen tap at (`tapX`, `tapY`) first (to
+ *   select a Symbol), then a button-held swipe from (`fromX`, `fromY`) to (`toX`, `toY`).
+ * - `gesture=place`: Symbol tool, a drag from (`fromX`, `fromY`) to (`toX`, `toY`) whose events carry the button only
+ *   from halfway, so it places at the lift and erases nothing.
  *
- * Arguments (screen pixels) as above, plus `sheet` (default "Test Etude"). Run with
- * `source scripts/device.sh; device_test EditSideButtonDeviceTest -e swipeX 1650 …`.
+ * Arguments are screen pixels, plus `sheet` (default "Test Etude"). Run with
+ * `source scripts/device.sh; device_test EditSideButtonDeviceTest -e gesture swipe -e tool Symbol -e fromX 1100 …`.
  */
 @RunWith(AndroidJUnit4::class)
 class EditSideButtonDeviceTest {
@@ -29,7 +31,7 @@ class EditSideButtonDeviceTest {
     private val device = UiDevice.getInstance(instrumentation)
     private val args = InstrumentationRegistry.getArguments()
 
-    private fun arg(name: String, default: Float) = args.getString(name)?.toFloat() ?: default
+    private fun arg(name: String) = args.getString(name)?.toFloat() ?: error("argument $name missing")
 
     private fun tapDesc(desc: String) {
         (device.wait(Until.findObject(By.desc(desc)), 5_000) ?: error("no \"$desc\"")).click()
@@ -37,7 +39,7 @@ class EditSideButtonDeviceTest {
     }
 
     @Test
-    fun sideButtonDoesNothingInEditMode() {
+    fun sideButtonErasesSymbolsInEditMode() {
         val sheet = args.getString("sheet") ?: "Test Etude"
         val context = instrumentation.targetContext
         context.startActivity(
@@ -46,25 +48,37 @@ class EditSideButtonDeviceTest {
         device.wait(Until.findObject(By.text(sheet)), 5_000)?.click() ?: error("Sheet \"$sheet\" not in the list")
         assertNotNull(device.wait(Until.findObject(By.descStartsWith("Page 1 of")), 5_000))
         tapDesc("Edit mode")
-
-        tapDesc("Select")
-        val x = arg("swipeX", 1650f)
-        stylusPath(listOf(x to arg("swipeFromY", 450f), x to arg("swipeToY", 550f)), MotionEvent.BUTTON_STYLUS_PRIMARY)
-        Thread.sleep(500)
-
-        tapDesc("Symbol")
-        val at = arg("tapX", 1000f) to arg("tapY", 300f)
-        stylusPath(listOf(at, at), MotionEvent.BUTTON_STYLUS_PRIMARY, steps = 2)
-        // Long enough for the placement's write to land before the run ends and the app is killed.
+        val from = arg("fromX") to arg("fromY")
+        val to = arg("toX") to arg("toY")
+        when (val gesture = args.getString("gesture")) {
+            "swipe" -> {
+                tapDesc(args.getString("tool") ?: "Symbol")
+                if (args.getString("tapX") != null) {
+                    val at = arg("tapX") to arg("tapY")
+                    stylusPath(at, at, steps = 2) { 0 }
+                    Thread.sleep(500)
+                }
+                stylusPath(from, to) { MotionEvent.BUTTON_STYLUS_PRIMARY }
+            }
+            "place" -> {
+                tapDesc("Symbol")
+                stylusPath(from, to) { i -> if (i >= 10) MotionEvent.BUTTON_STYLUS_PRIMARY else 0 }
+            }
+            else -> error("gesture \"$gesture\": swipe or place")
+        }
+        // Long enough for the write to land before the run ends and the app is killed.
         Thread.sleep(1_500)
     }
 
-    /** One pen gesture along the straight line between [points]' first and last, with [buttons] held until the lift. */
-    private fun stylusPath(points: List<Pair<Float, Float>>, buttons: Int, steps: Int = 20) {
-        val (fromX, fromY) = points.first()
-        val (toX, toY) = points.last()
+    /**
+     * One pen gesture along the straight line [from] → [to] in [steps] moves; event i (0 = the down, steps + 1 = the
+     * lift, which never carries a button) holds [buttons] of i.
+     */
+    private fun stylusPath(from: Pair<Float, Float>, to: Pair<Float, Float>, steps: Int = 20, buttons: (Int) -> Int) {
+        val (fromX, fromY) = from
+        val (toX, toY) = to
         val down = SystemClock.uptimeMillis()
-        fun send(action: Int, at: Long, x: Float, y: Float) {
+        fun send(action: Int, i: Int, x: Float, y: Float) {
             val properties = MotionEvent.PointerProperties().apply {
                 id = 0
                 toolType = MotionEvent.TOOL_TYPE_STYLUS
@@ -76,18 +90,18 @@ class EditSideButtonDeviceTest {
                 size = 0.01f
             }
             val event = MotionEvent.obtain(
-                down, at, action, 1, arrayOf(properties), arrayOf(coords), 0,
-                if (action == MotionEvent.ACTION_UP) 0 else buttons, 1f, 1f, 0, 0,
+                down, down + i * 10L, action, 1, arrayOf(properties), arrayOf(coords), 0,
+                if (action == MotionEvent.ACTION_UP) 0 else buttons(i), 1f, 1f, 0, 0,
                 InputDevice.SOURCE_STYLUS or InputDevice.SOURCE_TOUCHSCREEN, 0,
             )
             instrumentation.uiAutomation.injectInputEvent(event, true)
             event.recycle()
         }
-        send(MotionEvent.ACTION_DOWN, down, fromX, fromY)
+        send(MotionEvent.ACTION_DOWN, 0, fromX, fromY)
         for (i in 1..steps) {
             val t = i / steps.toFloat()
-            send(MotionEvent.ACTION_MOVE, down + i * 10L, fromX + (toX - fromX) * t, fromY + (toY - fromY) * t)
+            send(MotionEvent.ACTION_MOVE, i, fromX + (toX - fromX) * t, fromY + (toY - fromY) * t)
         }
-        send(MotionEvent.ACTION_UP, down + (steps + 1) * 10L, toX, toY)
+        send(MotionEvent.ACTION_UP, steps + 1, toX, toY)
     }
 }

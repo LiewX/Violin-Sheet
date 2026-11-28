@@ -14,7 +14,7 @@ import androidx.compose.ui.geometry.Size
  * [selectionColour]. Every pen down on a Page, with any tool, is reported to [onPenDown]. Only the pen draws, erases
  * and selects; finger touches pass through to navigation (CLAUDE.md:
  * input split). With [penEnabled] off (Edit mode) the strokes are still drawn but the pen does nothing here, the side
- * button included.
+ * button included: Edit mode's own pen layer erases Symbols with it, never Ink.
  * Platform code: native low-latency ink per platform (ADR 0002).
  */
 @Composable

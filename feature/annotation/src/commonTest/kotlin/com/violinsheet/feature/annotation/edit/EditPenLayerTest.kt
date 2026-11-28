@@ -20,6 +20,13 @@ class EditPenLayerTest {
         assertTrue(beyondSlop(Offset(100f, 100f), Offset(106f, 106f), slopPx = 8f))
     }
 
+    @Test fun theSideButtonHeldAtPenDownErasesWithEveryTool() {
+        for (tool in EditTool.entries) {
+            assertEquals(EditTool.Eraser, editToolForGesture(tool, eraseHeld = true), "$tool, button held")
+            assertEquals(tool, editToolForGesture(tool, eraseHeld = false), "$tool, no button")
+        }
+    }
+
     @Test fun aScreenReachIsPagePointsAtTheZoom() {
         assertEquals(4f, placement.pagePoints(8f))
         assertEquals(8f, placement.copy(scale = 0.5f).pagePoints(4f))

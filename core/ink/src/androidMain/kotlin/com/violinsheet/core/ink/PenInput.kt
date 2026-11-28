@@ -1,6 +1,5 @@
 package com.violinsheet.core.ink
 
-import android.view.MotionEvent
 import android.view.View
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -19,15 +18,6 @@ import androidx.ink.strokes.StrokeInput
  * on, or the nearest one when it started off every Page. [start] is where that Page was at pen down.
  */
 internal class WetStroke(val start: PagePlacement, val tool: StrokeTool)
-
-/**
- * Whether the S Pen side button is held. Android reports it as the stylus primary button; some devices report a stylus
- * button as the secondary (mouse) button instead, which Compose's isSecondaryPressed also allows for.
- */
-private fun PointerEvent.eraseHeld(): Boolean {
-    val buttons = motionEvent?.buttonState ?: return false
-    return buttons and (MotionEvent.BUTTON_STYLUS_PRIMARY or MotionEvent.BUTTON_SECONDARY) != 0
-}
 
 /**
  * The pen's input: draws, erases and lassos as [state]'s tool says. Pen input goes through Compose rather than a View
@@ -79,7 +69,7 @@ internal fun Modifier.penInput(state: InkLayerState, hostView: View): Modifier =
                             lasso.endLasso(cancelled = true)
                             // Decided once, at pen down: pressing or releasing the side button mid-gesture changes
                             // nothing until the pen lifts.
-                            val chosen = toolForGesture(state.tool, state.eraser, event.eraseHeld())
+                            val chosen = toolForGesture(state.tool, state.eraser, event.isEraseHeld())
                             // Whatever the tool, the pen touching a Page is where a paste goes.
                             state.pageAt(change.position)?.let { state.onPenDown(it.pageIndex) }
                             if (chosen is Lasso) {

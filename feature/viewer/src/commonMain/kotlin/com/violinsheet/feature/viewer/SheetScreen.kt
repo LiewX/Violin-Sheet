@@ -49,13 +49,15 @@ private const val SETTLE_MILLIS = 150L
 
 /**
  * Reads one Sheet: one Page in portrait, two side by side in landscape, with pinch zoom. [overlay] draws Annotations
- * over the Pages, given where each shown Page is on screen; [toolbar] sits at the bottom edge.
+ * over the Pages, given where each shown Page is on screen; [toolbar] sits at the bottom edge. [onFingerTap] hears
+ * each one-finger tap on the Sheet that isn't a palm, `atEdge` true for a Page-turn edge tap (told before it turns).
  */
 @Composable
 fun SheetScreen(
     viewModel: SheetViewModel,
     overlay: @Composable (List<PagePlacement>) -> Unit = {},
     toolbar: @Composable () -> Unit = {},
+    onFingerTap: (atEdge: Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val index by viewModel.pageIndex.collectAsState()
@@ -98,6 +100,8 @@ fun SheetScreen(
                 zoom = panned
                 return overscroll
             }
+
+            override fun tapped(atEdge: Boolean) = onFingerTap(atEdge)
 
             override fun turn(direction: Int) {
                 viewModel.turn(direction, spread)

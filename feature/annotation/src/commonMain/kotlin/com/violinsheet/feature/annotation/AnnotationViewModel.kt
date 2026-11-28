@@ -19,8 +19,8 @@ import com.violinsheet.core.ink.strokeIds
 import com.violinsheet.feature.annotation.edit.EditInput
 import com.violinsheet.feature.annotation.edit.EditTools
 import com.violinsheet.feature.annotation.edit.Mode
-import com.violinsheet.feature.annotation.edit.SymbolEditing
-import com.violinsheet.feature.annotation.edit.SymbolSelection
+import com.violinsheet.feature.annotation.edit.symbol.SymbolEditing
+import com.violinsheet.feature.annotation.edit.symbol.SymbolSelection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -101,6 +101,9 @@ class AnnotationViewModel(
     val symbols: StateFlow<List<Symbol>> = symbolEditing.symbols
     val symbolSelection: StateFlow<SymbolSelection?> = symbolEditing.selection
 
+    /** The Symbol being placed (pen down, not lifted yet): drawn on top, not saved. */
+    val symbolPlacing: StateFlow<Symbol?> = symbolEditing.placing
+
     /**
      * Edit mode's pen input. A separate object rather than methods of this ViewModel: its dragTo, endErase,
      * deleteSelection and clearSelection would clash with LassoInput's and EraseInput's.
@@ -176,9 +179,23 @@ class AnnotationViewModel(
         symbolEditing.deleteSelection()
     }
 
+    /** The Edit selection's Symbols take the colour [argb], as one undo step (none if they all have it). #14 adds the swatches. */
+    fun recolourSymbols(argb: Int) = symbolEditing.recolourSelection(argb)
+
     override fun clearSelection() {
         lasso.clearSelection()
         symbolEditing.clearSelection()
+    }
+
+    /**
+     * A finger tapped the Sheet (palm rules already applied by the viewer): a tap between the edges ends the
+     * selection, Ink lasso's or Edit's. An edge tap ([atEdge]) only turns the Page, and the turn clears a selection only
+     * when its Page leaves the screen ([onVisiblePages]). Not while a pen gesture runs, as clearing would drop its drag,
+     * placement or erase midway.
+     */
+    fun onFingerTap(atEdge: Boolean = false) {
+        if (atEdge || gestureRunning) return
+        clearSelection()
     }
 
     /** One drawn stroke, as [parts]: one per Page it ran over (InkStroke.splitAtPages). One undo step takes them all. */

@@ -1,4 +1,4 @@
-package com.violinsheet.feature.annotation.edit
+package com.violinsheet.feature.annotation.edit.symbol
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size

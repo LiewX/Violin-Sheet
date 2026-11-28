@@ -136,6 +136,26 @@ internal data class Zoom(val scale: Float = 1f, val offset: Offset = Offset.Zero
     }
 }
 
+/** A one-finger tap on the Sheet: in the outer [EDGE_FRACTION] of the width ([Edge], which turns), or between them. */
+internal sealed interface FingerTap {
+    data object Middle : FingerTap
+
+    /** +1 at the right edge (forward), -1 at the left (back). */
+    data class Edge(val direction: Int) : FingerTap
+}
+
+/**
+ * The tap one finger gesture is, or null if it is no tap: it must lift quickly ([isQuickTap], from [durationMillis])
+ * and travel ([drag]) at most [tapSlop]. [start] says where across [width] it is.
+ */
+internal fun fingerTapOf(start: Offset, drag: Offset, width: Float, tapSlop: Float, durationMillis: Long): FingerTap? =
+    when {
+        drag.getDistance() > tapSlop || !isQuickTap(durationMillis) -> null
+        start.x < width * EDGE_FRACTION -> FingerTap.Edge(-1)
+        start.x > width * (1 - EDGE_FRACTION) -> FingerTap.Edge(1)
+        else -> FingerTap.Middle
+    }
+
 /**
  * Page turn for one finger gesture: +1 forward, -1 back, 0 none.
  * - A tap (finger travel [drag] under [tapSlop]) in the outer [EDGE_FRACTION] of [width] turns towards that side.
@@ -159,12 +179,7 @@ internal fun pageTurnFor(
     durationMillis: Long,
 ): Int {
     if (drag.getDistance() <= tapSlop) {
-        return when {
-            !isQuickTap(durationMillis) -> 0
-            start.x < width * EDGE_FRACTION -> -1
-            start.x > width * (1 - EDGE_FRACTION) -> 1
-            else -> 0
-        }
+        return (fingerTapOf(start, drag, width, tapSlop, durationMillis) as? FingerTap.Edge)?.direction ?: 0
     }
     fun swipeOf(travel: Offset, distance: Float) =
         if (abs(travel.x) > distance && abs(travel.x) > abs(travel.y)) -sign(travel.x).toInt() else 0

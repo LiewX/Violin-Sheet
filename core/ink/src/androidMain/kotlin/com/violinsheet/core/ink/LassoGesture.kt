@@ -4,18 +4,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 
-// Lasso points closer than this on screen to the last one add nothing but work for lassoSelects.
-private val LASSO_STEP = 2.dp
-
 // A Lasso pen-down that stays within this of where it started is a tap; it picks a stroke whose ink is this near.
 private val TAP_SLOP = 8.dp
 private val TAP_REACH = 4.dp
-
-/** [screen] in this Page's coordinates, kept within the Page. */
-private fun PagePlacement.toPageWithin(screen: Offset): Offset {
-    val page = toPage(screen)
-    return Offset(page.x.coerceIn(0f, pageSize.width), page.y.coerceIn(0f, pageSize.height))
-}
 
 /** The pen's gestures with the Lasso tool: drawing a lasso, tapping a stroke, dragging the selection. */
 internal class LassoGesture(private val state: InkLayerState, density: Density) {

@@ -14,7 +14,7 @@ Status overview. Scope is in [`docs/SPECS.md`](docs/SPECS.md); detailed work ite
 | 1. Annotation editing | Saved colour palettes and editable size presets | Done | #22: palettes with + Add colour and editing in the Sheet; Settings → Ink edits palettes (tap to edit or delete, hold and drag to reorder, Undo) and size presets; Sheets start on the first colour and middle preset (no stored defaults) |
 | 1. Annotation editing | Fixes from use (2026-11-27): toolbar keeps one width, palm rejection for navigation, strokes split at Page edges | Done | #23 toolbar, #24 palm rules, #25 strokes split at Page edges |
 | 1. Annotation editing | Symbols: fingerings | Done | #12: Edit mode (Symbol, Select, Eraser; Cover greyed until #18), mode switch and one-width bar across modes, fingerings 0–4 in Bravura, place/select/move/resize/erase with undo; Symbol table (DB v7). Next: #13 |
-| 1. Annotation editing | Fixes from the manual check (2026-11-28) | Not Started | #27 Edit mode drag-to-place, Edit Lasso, side button erases Symbols, finger tap clears the selection; #28 palm window 0.15 s and panel closing; #29 size cursor on hover; #30 panel and Settings polish. #27 goes before #13 |
+| 1. Annotation editing | Fixes from the manual check (2026-11-28) | In Progress | #27 done: drag-to-place, Edit Lasso (move/delete several; recolour swatches in #14), side button erases Symbols, finger tap clears the selection. Left: #28 palm window 0.15 s and panel closing; #29 size cursor on hover; #30 panel and Settings polish |
 | 1. Annotation editing | Symbols: articulations | Not Started | — |
 | 1. Annotation editing | Symbols: bowings | Not Started | — |
 | 1. Annotation editing | Symbols: dynamic letters | Not Started | — |

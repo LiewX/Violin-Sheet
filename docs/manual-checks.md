@@ -114,3 +114,25 @@ All checks for #2–#6, and the fixes after the first check (palm rest, zoomed t
 - [x] Fingerings look printed (Bravura) at the standard size against real Sheets (Decision 6), and stay on their note when zoomed.
 - [x] A selected fingering: dragging its middle moves it, dragging a corner handle resizes it.
 // Additional comments on #12: change side button in edit mode to also erase symbols. Change the cover icon to a mosaic pattern. The fingering should work if a tap, drag and release is performed, with the initial tap showing the symbol. After a fingering is placed, a quick tap on the sheet de-selects the symbol. Change the select button in edit mode to a lasso instead → #27 (placing, tap clears, Lasso, side button), #30 (mosaic icon), #18 (Covers erased and lassoed)
+
+## #27 Edit mode: drag-to-place, Edit Lasso, side button, finger tap clears
+
+Checks where a finger touches while the pen is down or hovering are left out: fingers are ignored then (accepted 2026-11-28).
+
+- [ ] Symbol tool: pen down on empty Page shows the fingering under the tip at once, it stays still for small wobbles, follows a drag and lands where the pen lifts; one Undo removes it.
+- [ ] Dragging a placement off the Page edge: it stops at the edge of the Page it started on.
+- [ ] Palm landing first, then the pen places a fingering: the palm makes no Symbol, and the placement lands at the lift.
+- [ ] Fingerings on neighbouring notes, tap after tap: a tap close to the selected fingering is read as a move or resize of it (its frame and handles), so the next fingering may not get placed. Does it get in the way? (from #12)
+- [ ] Any tool (Symbol, Lasso, Eraser, Cover): hold the S Pen side button and swipe across fingerings. They go, the Ink under them stays, and one Undo brings them back.
+- [ ] Side button pressed mid-way through a placement drag or a Symbol move: nothing erases, and the placement lands at the lift. Released mid-way through a button erase: it keeps erasing until the lift. The next stroke without the button uses the chosen tool again.
+- [ ] Side button held while hovering, then touch down: it erases. Touch down first, then press it: it doesn't.
+- [ ] A palm resting on the screen while erasing with the button neither erases nor draws.
+- [ ] Ink Lasso or Edit selection, then a quick finger tap in the middle of the Page: the frame goes. A finger resting longer than a quarter second keeps it.
+- [ ] A finger tap right after a pen lift (within the pen window) leaves the selection; a tap a moment later clears it.
+- [ ] A two-finger tap on the Page: the selection stays and the Page doesn't turn.
+- [ ] Landscape with advance-by-one on: an edge tap turns, the selection on the Page that stays on screen remains, and it goes on the next turn that takes its Page off the screen.
+- [ ] Lasso: a palm landing first, then the pen draws a loop: the palm adds no loop points and selects nothing.
+- [ ] Lasso: press the side button mid-loop: nothing changes until the lift, and the loop selects as usual.
+- [ ] Lasso: a loop around a few fingerings selects exactly those wholly inside (one half inside is not caught). The frame shows no corner handles, a drag inside moves them all, and Delete removes them in one Undo step.
+- [ ] Lasso: a pen tap on a fingering selects it alone (with handles), and a pen down on an unselected fingering drags it straight away. A pen tap on empty Page clears the selection.
+- [ ] The Lasso icon is the same in Ink mode and Edit mode, and the Edit toolbar doesn't shift when switching tools.

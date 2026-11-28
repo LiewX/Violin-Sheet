@@ -12,7 +12,7 @@ import com.violinsheet.core.ink.InkLayer
 import com.violinsheet.core.ink.PagePlacement
 import com.violinsheet.feature.annotation.edit.EditPenLayer
 import com.violinsheet.feature.annotation.edit.Mode
-import com.violinsheet.feature.annotation.edit.SymbolLayer
+import com.violinsheet.feature.annotation.edit.symbol.SymbolLayer
 
 /**
  * The open Sheet's Annotations over the Pages at [placements], wired to its [viewModel], bottom to top: Symbols, Ink
@@ -27,11 +27,12 @@ fun AnnotationOverlay(viewModel: AnnotationViewModel, placements: List<PagePlace
     val selection by viewModel.selection.collectAsState()
     val symbols by viewModel.symbols.collectAsState()
     val symbolSelection by viewModel.symbolSelection.collectAsState()
+    val symbolPlacing by viewModel.symbolPlacing.collectAsState()
     val editTools by viewModel.editTools.collectAsState()
     val selectionColour = MaterialTheme.colorScheme.primary
     val shownPages = remember(placements) { placements.associate { it.pageIndex to it.pageSize } }
     LaunchedEffect(shownPages) { viewModel.onVisiblePages(shownPages) }
-    SymbolLayer(placements, symbols, symbolSelection, Modifier.fillMaxSize())
+    SymbolLayer(placements, symbols, symbolSelection, symbolPlacing, Modifier.fillMaxSize())
     InkLayer(
         placements, strokes, tools.current, tools.eraser, viewModel::addStrokes, viewModel,
         selection, viewModel, selectionColour, viewModel::onPenDown,

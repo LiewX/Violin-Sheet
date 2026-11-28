@@ -77,6 +77,7 @@ class MainActivity : ComponentActivity() {
                             viewModel,
                             overlay = { placements -> AnnotationOverlay(annotations, placements) },
                             toolbar = { AnnotationBar(annotations, panel) },
+                            onFingerTap = { atEdge -> annotations.onFingerTap(atEdge) },
                             modifier = Modifier.closesToolPanel(panel),
                         )
                     }

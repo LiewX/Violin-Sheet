@@ -1,4 +1,4 @@
-package com.violinsheet.feature.annotation.edit
+package com.violinsheet.feature.annotation.edit.symbol
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
